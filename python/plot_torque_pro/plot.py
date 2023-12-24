@@ -49,8 +49,8 @@ def load_from_csv(csv_path, config):
 
     # Split the data into multiple CSVs if necessary
     with preprocess_data(csv_path) as sessions:
-        if config['plot'].get('session'):
-            csv_dataframe = pandas.read_csv(sessions[config['plot']['session']], **read_args)
+        if config.get('session'):
+            csv_dataframe = pandas.read_csv(sessions[config['session']], **read_args)
         elif len(sessions) == 1:
             csv_dataframe = pandas.read_csv(sessions[0], **read_args)
         else:
