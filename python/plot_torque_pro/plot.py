@@ -48,15 +48,14 @@ def load_from_csv(csv_path, config):
                      dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
-    sessions, tempdir = preprocess_data(csv_path)
-
-    if config['plot'].get('session'):
-        csv_dataframe = pandas.read_csv(sessions[config['plot']['session']], **read_args)
-    elif len(sessions) == 1:
-        csv_dataframe = pandas.read_csv(sessions[0], **read_args)
-    else:
-        all_dataframes = [pandas.read_csv(f, **read_args) for f in sessions]
-        csv_dataframe = pandas.concat(all_dataframes)
+    with preprocess_data(csv_path) as sessions:
+        if config['plot'].get('session'):
+            csv_dataframe = pandas.read_csv(sessions[config['plot']['session']], **read_args)
+        elif len(sessions) == 1:
+            csv_dataframe = pandas.read_csv(sessions[0], **read_args)
+        else:
+            all_dataframes = [pandas.read_csv(f, **read_args) for f in sessions]
+            csv_dataframe = pandas.concat(all_dataframes)
 
     plot_columns = determine_columns(list(csv_dataframe.columns), config)
     csv_dataframe = csv_dataframe[plot_columns].copy()
@@ -78,10 +77,13 @@ def preprocess_data(csv_path):
                 header_indices.append(index)
 
     if len(header_indices) == 1:
-        return [csv_path], None
+        return TemporaryCSV([csv_path])
 
     # split the file into multiple files
-    return split_csv(csv_path, split_indices=header_indices + [index+1])
+    csv_paths, tempdir = split_csv(csv_path, split_indices=header_indices + [index+1])
+    # and wrap the temporary files in a context manager for deleting the files when done
+    managed_csvs = TemporaryCSV(csv_paths, tempdir)
+    return managed_csvs
 
 
 def split_csv(csv_path, split_indices):
@@ -106,12 +108,23 @@ def split_csv(csv_path, split_indices):
 
         except IOError:
             output_handle.close()
-            for f in split_paths:
-                f.unlink(missing_ok=True)
-            temp_dir.rmdir()
+            _cleanup_tmp(split_paths, temp_dir)
             raise
 
     return split_paths, temp_dir
+
+
+class TemporaryCSV:
+    def __init__(self, csv_paths, temp_dir=None):
+        self.csv_paths = csv_paths
+        self.temp_dir = temp_dir
+
+    def __enter__(self):
+        return self.csv_paths
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.temp_dir is not None:
+            _cleanup_tmp(self.csv_paths, self.temp_dir)
 
 
 def _next_file(indices, dest_dir):
@@ -124,3 +137,11 @@ def _next_file(indices, dest_dir):
 
         output_handle.close()
         output_path = dest_path / f'session_{session_id+1}.csv'
+
+
+def _cleanup_tmp(split_paths, temp_dir):
+    for f in split_paths:
+        logger.debug("Deleting %s", str(f))
+        f.unlink(missing_ok=True)
+    logger.debug("Deleting %s", str(temp_dir))
+    temp_dir.rmdir()
