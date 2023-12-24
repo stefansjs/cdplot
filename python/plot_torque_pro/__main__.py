@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 import logging
-import os
 import sys
 from pathlib import Path
 
-print("\n".join(sys.path))
-
-from .plot import plot_data
 from .config import process_config
+from .plot import plot_data
 
 
 def main():

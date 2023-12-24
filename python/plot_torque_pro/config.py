@@ -17,12 +17,12 @@ DEFAULT_CONFIG = {
 
     'data': {
         'include': [],
-        'exclude': [],
+        'exclude': ['index'],
         'include_pattern': [],
         'exclude_pattern': [],
     },
     'plot': {
-        'x_axis': None,
+        'x': None,
     },
 }
 
@@ -49,7 +49,8 @@ TOML_SCHEMA = {
                 plot={
                     'type': 'object',
                     'properties': dict(
-
+                        x={'type': 'string'},
+                        y=STRING_ARRAY_SCHEMA,
                     )
                 }
             ),
@@ -172,9 +173,17 @@ def determine_columns(columns, config):
             columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), columns)
         del data_config['exclude_pattern']
 
-    x_axis = config['plot'].get('x_axis')
+    # Make sure we handle the x-axis
+    x_axis = config['plot'].get('x')
     if x_axis is not None and x_axis not in columns:
+        config['plot']['y'] = columns
         columns.insert(0, x_axis)
+    elif x_axis is not None and x_axis in columns:
+        config['plot']['y'] = list(columns)
+        config['plot']['y'].remove(x_axis)
+    else:
+        config['plot']['x'] = columns[0]
+        config['plot']['y'] = columns[1:]
 
     data_config['columns'] = columns
 

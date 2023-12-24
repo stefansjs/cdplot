@@ -38,4 +38,4 @@ def load_from_csv(csv_path, config):
 
 
 def render_plot(csv_data, config):
-    return plotly.express.line(csv_data, x=config['x_axis'])
+    return plotly.express.line(csv_data, x=config['x'], y=config['y'])
