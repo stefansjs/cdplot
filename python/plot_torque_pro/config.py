@@ -76,6 +76,7 @@ def process_config(config_file=None, **config_args):
         config = merge_configs(config, config_from_toml['plot_torque_pro'])
 
     # command-line arguments should override the config file(s)
+    config_overrides = args_to_config(config_args)
     config = merge_configs(config, config_overrides)
 
     # mutate parameters as needed
@@ -83,7 +84,24 @@ def process_config(config_file=None, **config_args):
     return config
 
 
-def merge_configs(config, overrides, parent_name=None):
+def args_to_config(argparse_args):
+    data_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties']['data']['properties'].keys()
+    plot_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties']['plot']['properties'].keys()
+    root_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties'].keys()
+
+    data_dict = {key: value for key, value in argparse_args.items() if key in data_keys}
+    plot_dict = {key: value for key, value in argparse_args.items() if key in plot_keys}
+
+    args_config = {key: value for key, value in argparse_args.items() if key in root_keys}
+    if data_dict:
+        args_config['data'] = data_dict
+    if plot_dict:
+        args_config['plot'] = plot_dict
+
+    return args_config
+
+
+def merge_configs(config, overrides, parent_name='plot_torque_pro'):
     # this method should probably take a strategy of some kind
     merged_config = dict(config)
 
@@ -115,6 +133,9 @@ def normalize_config(config):
 
 
 def determine_columns(columns, config):
+    if config.get('columns'):
+        return config['columns']
+
     included_columns = None
 
     if config.get('include'):
