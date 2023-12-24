@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def plot_data(csv_path: Path, config: dict):
-    csv_data = load_from_csv(csv_path, config['data'])
+    csv_data = load_from_csv(csv_path, config)
     plot_handle = render_plot(csv_data, config['plot'])
 
     logger.debug("To reproduce this plot, put the following toml into its own config file\n%s",

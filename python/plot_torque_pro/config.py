@@ -22,7 +22,7 @@ DEFAULT_CONFIG = {
         'exclude_pattern': [],
     },
     'plot': {
-        'x_axis': 'Device Time',
+        'x_axis': None,
     },
 }
 
@@ -142,35 +142,40 @@ def serialize_config(config, make_paths_absolute=False):
 
 
 def determine_columns(columns, config):
-    if config.get('columns'):
-        return config['columns']
+    data_config = config['data']
+    if data_config.get('columns'):
+        return data_config['columns']
 
     included_columns = None
 
-    if config.get('include'):
-        include_set = set(config['include'])
+    if data_config.get('include'):
+        include_set = set(data_config['include'])
         included_columns = lfilter(lambda c: c in include_set, columns)
-        del config['include']
+        del data_config['include']
 
-    if config.get('include_pattern'):
+    if data_config.get('include_pattern'):
         included_columns = included_columns or []
-        for pattern in config['include_pattern']:
+        for pattern in data_config['include_pattern']:
             included_columns.extend(fnmatch.filter(columns, pattern))
-        del config['include_pattern']
+        del data_config['include_pattern']
 
     if included_columns is not None:
         columns = included_columns
 
-    if config.get('exclude'):
-        exclude_set = set(config['exclude'])
+    if data_config.get('exclude'):
+        exclude_set = set(data_config['exclude'])
         columns = lfilter(lambda c: c not in exclude_set, columns)
-        del config['exclude']
+        del data_config['exclude']
 
-    if config.get('exclude_pattern'):
-        for pattern in config['exclude_pattern']:
+    if data_config.get('exclude_pattern'):
+        for pattern in data_config['exclude_pattern']:
             columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), columns)
-        del config['exclude_pattern']
+        del data_config['exclude_pattern']
 
-    config['columns'] = columns
+    x_axis = config['plot'].get('x_axis')
+    if x_axis is not None and x_axis not in columns:
+        columns.insert(0, x_axis)
+
+    data_config['columns'] = columns
 
     return columns
