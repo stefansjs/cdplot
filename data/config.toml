@@ -1,0 +1,10 @@
+[plot_torque_pro]
+
+[plot_torque_pro.data]
+include = []
+exclude = []
+include_pattern = []
+exclude_pattern = []
+
+[plot_torque_pro.plot]
+x_axis = "Device Time"
