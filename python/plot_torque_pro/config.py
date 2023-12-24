@@ -132,6 +132,15 @@ def normalize_config(config):
         config['output_path'] = Path(config['output_path']).expanduser()
 
 
+def serialize_config(config, make_paths_absolute=False):
+    # Essentially just un-does what's in normalize_config
+    config['csv_path'] = str(config['csv_path'])
+    if config.get('output_path'):
+        config['output_path'] = str(config['output_path'])
+
+    return toml.dumps(config)
+
+
 def determine_columns(columns, config):
     if config.get('columns'):
         return config['columns']
