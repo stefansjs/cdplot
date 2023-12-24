@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 import pandas
+import plotly.express
 
 from .config import determine_columns, serialize_config
 
@@ -28,11 +29,13 @@ def plot_data(csv_path: Path, config: dict):
 
 def load_from_csv(csv_path, config):
     csv_dataframe = pandas.read_csv(csv_path)
+    csv_dataframe = csv_dataframe.rename(columns=str.strip)  # strip whitespace from headers
+
     plot_columns = determine_columns(list(csv_dataframe.columns), config)
     csv_dataframe = csv_dataframe[plot_columns].copy()
 
     return csv_dataframe
 
 
-def render_plot(csv_data, param):
-    pass
+def render_plot(csv_data, config):
+    return plotly.express.line(csv_data, x=config['x_axis'])
