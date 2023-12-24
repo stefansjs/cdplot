@@ -104,7 +104,7 @@ def split_csv(csv_path, split_indices):
                     output_handle, next_index = next(output_iter)
                     split_paths.append(Path(output_handle.name))
 
-                output_handle.write(line)
+                output_handle.write(fix_torque_data(line))
 
         except IOError:
             output_handle.close()
@@ -112,6 +112,10 @@ def split_csv(csv_path, split_indices):
             raise
 
     return split_paths, temp_dir
+
+
+def fix_torque_data(csv_line):
+    return re.sub('∞', 'inf', csv_line)
 
 
 class TemporaryCSV:
