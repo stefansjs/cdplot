@@ -5,6 +5,7 @@ import fnmatch
 import logging
 from pathlib import Path
 
+import jsonschema
 import toml
 
 logger = logging.getLogger(__name__)
@@ -25,13 +26,45 @@ DEFAULT_CONFIG = {
     },
 }
 
+STRING_ARRAY_SCHEMA = {'type': 'array', 'items': {'type': 'string'}}
+TOML_SCHEMA = {
+    'type': 'object',
+    'properties': dict(
+        plot_torque_pro={
+            'type': 'object',
+            'properties': dict(
+                csv_path={'type': 'string'},
+                output_path={'type': 'string'},
+                session={'type': 'number'},
+                data={
+                    'type': 'object',
+                    'properties': dict(
+                        columns=STRING_ARRAY_SCHEMA,
+                        include=STRING_ARRAY_SCHEMA,
+                        exclude=STRING_ARRAY_SCHEMA,
+                        include_pattern=STRING_ARRAY_SCHEMA,
+                        exclude_pattern=STRING_ARRAY_SCHEMA,
+                    )
+                },
+                plot={
+                    'type': 'object',
+                    'properties': dict(
+
+                    )
+                }
+            ),
+        }
+    ),
+    'requiredProperties': ['plot_torque_pro']
+}
+
 
 def lfilter(*args):
     return list(filter(*args))
 
 
-def process_config(config_file=None, **config_overrides):
-    if config_file is None and not config_overrides:
+def process_config(config_file=None, **config_args):
+    if config_file is None and not config_args:
         # base case
         return DEFAULT_CONFIG
 
@@ -39,6 +72,7 @@ def process_config(config_file=None, **config_overrides):
 
     if config_file is not None:
         config_from_toml = toml.load(config_file)
+        jsonschema.validate(config_from_toml, TOML_SCHEMA)
         config = merge_configs(config, config_from_toml['plot_torque_pro'])
 
     # command-line arguments should override the config file(s)
@@ -51,10 +85,7 @@ def process_config(config_file=None, **config_overrides):
 
 def merge_configs(config, overrides, parent_name=None):
     # this method should probably take a strategy of some kind
-    if 'plot_torque_pro' in config:
-        merged_config = dict(config['plot_torque_pro'])
-    else:
-        merged_config = dict(config)
+    merged_config = dict(config)
 
     for key, value in overrides.items():
         if key not in merged_config or merged_config[key] is None:
@@ -69,7 +100,6 @@ def merge_configs(config, overrides, parent_name=None):
             merged_config[key] += value
 
         else:
-            logger.debug("Overwriting config value stored in %s", nested_name)
             merged_config[key] = value
 
     return merged_config
