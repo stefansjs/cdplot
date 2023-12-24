@@ -57,7 +57,7 @@ def merge_configs(config, overrides, parent_name=None):
         merged_config = dict(config)
 
     for key, value in overrides.items():
-        if key not in merged_config:
+        if key not in merged_config or merged_config[key] is None:
             merged_config[key] = value
 
         nested_name = key if parent_name is None else f'{parent_name}.{key}'
@@ -80,7 +80,7 @@ def normalize_config(config):
 
     # update paths to be a Path instance
     config['csv_path'] = Path(config['csv_path']).expanduser()
-    if 'output_path' in config:
+    if config.get('output_path'):
         config['output_path'] = Path(config['output_path']).expanduser()
 
 
@@ -94,7 +94,8 @@ def determine_columns(columns, config):
 
     if config.get('include_pattern'):
         included_columns = included_columns or []
-        included_columns.extend(fnmatch.filter(columns, pattern) for pattern in config['include-pattern'])
+        for pattern in config['include_pattern']:
+            included_columns.extend(fnmatch.filter(columns, pattern))
         del config['include_pattern']
 
     if included_columns is not None:
