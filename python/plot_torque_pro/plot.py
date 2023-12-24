@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas
 import toml
 
-from python.config import determine_columns
+from .config import determine_columns
 
 logger = logging.getLogger(__name__)
 

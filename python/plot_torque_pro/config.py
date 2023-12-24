@@ -3,6 +3,7 @@ Handles reading config files and arguments to produce one config dictionary
 """
 import fnmatch
 import logging
+from pathlib import Path
 
 import toml
 
@@ -10,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = {
     'csv_path': None,
+    'output_path': None,
+    'session': None,
 
     'data': {
         'include': [],
@@ -25,6 +28,25 @@ DEFAULT_CONFIG = {
 
 def lfilter(*args):
     return list(filter(*args))
+
+
+def process_config(config_file=None, **config_overrides):
+    if config_file is None and not config_overrides:
+        # base case
+        return DEFAULT_CONFIG
+
+    config = dict(DEFAULT_CONFIG)
+
+    if config_file is not None:
+        config_from_toml = toml.load(config_file)
+        config = merge_configs(config, config_from_toml['plot_torque_pro'])
+
+    # command-line arguments should override the config file(s)
+    config = merge_configs(config, config_overrides)
+
+    # mutate parameters as needed
+    normalize_config(config)
+    return config
 
 
 def merge_configs(config, overrides, parent_name=None):
@@ -53,21 +75,13 @@ def merge_configs(config, overrides, parent_name=None):
     return merged_config
 
 
-def process_config(config_file=None, **config_overrides):
-    if config_file is None and not config_overrides:
-        # base case
-        return DEFAULT_CONFIG
+def normalize_config(config):
+    """ Make sure that every parameter is of the type expected """
 
-    config = dict(DEFAULT_CONFIG)
-
-    if config_file is not None:
-        config_from_toml = toml.load(config_file)
-        config = merge_configs(config, config_from_toml)
-
-    # command-line arguments should override the config file(s)
-    config = merge_configs(config, config_overrides)
-
-    return config
+    # update paths to be a Path instance
+    config['csv_path'] = Path(config['csv_path']).expanduser()
+    if 'output_path' in config:
+        config['output_path'] = Path(config['output_path']).expanduser()
 
 
 def determine_columns(columns, config):

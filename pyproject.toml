@@ -6,7 +6,7 @@ authors = ["Stefan Sullivan <stefan.sullivan@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "*", from = "python" },
+    { include = "plot_torque_pro", from = "python" },
 ]
 
 [tool.poetry.dependencies]
