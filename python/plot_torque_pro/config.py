@@ -17,9 +17,12 @@ DEFAULT_CONFIG = {
 
     'data': {
         'include': [],
-        'exclude': ['index'],
+        'exclude': [],
         'include_pattern': [],
         'exclude_pattern': [],
+        'index': None,
+        'skipinitialspace': True,
+        'parse_dates': True,
     },
     'plot': {
         'x': None,
@@ -37,13 +40,32 @@ TOML_SCHEMA = {
                 output_path={'type': 'string'},
                 session={'type': 'number'},
                 data={
+                    'description': "Parameters relating to how data should be read from csv",
                     'type': 'object',
                     'properties': dict(
+                        index={'anyOf': [
+                            dict(type='boolean'),  # default = False
+                            dict(type='string'),   # one or more column names
+                            dict(type='array', items={'type': 'string'}),
+                        ]},
+
                         columns=STRING_ARRAY_SCHEMA,
                         include=STRING_ARRAY_SCHEMA,
                         exclude=STRING_ARRAY_SCHEMA,
                         include_pattern=STRING_ARRAY_SCHEMA,
                         exclude_pattern=STRING_ARRAY_SCHEMA,
+
+                        default_type={'type': 'string'},
+                        dtype={
+                            'type': 'object',
+                            'patternProperties': {
+                                "": {'type': 'string'}
+                            }
+                        },
+
+                        skipinitialspace={'type': 'boolean'},
+                        parse_dates={'type': 'boolean'},
+                        date_format={'type': 'string'},
                     )
                 },
                 plot={

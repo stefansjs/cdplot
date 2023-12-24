@@ -4,6 +4,7 @@ Reads and plots data from csv
 import logging
 import re
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 
 import pandas
@@ -31,7 +32,20 @@ def plot_data(csv_path: Path, config: dict):
 
 def load_from_csv(csv_path, config):
     conf = config['data']
-    read_args = dict(skipinitialspace=True, parse_dates=True, index_col=conf['index'])
+
+    if conf.get('default_type'):
+        dtypes = defaultdict(lambda: conf['default_type'])
+        dtypes.update(conf.get('dtype', {}))
+    elif conf.get('dtype'):
+        dtypes = conf['dtype']
+    else:
+        dtypes = None
+
+    read_args = dict(skipinitialspace=conf['skipinitialspace'],
+                     parse_dates=conf['parse_dates'],
+                     date_format=conf.get('date_format'),
+                     index_col=conf['index'],
+                     dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
     sessions, tempdir = preprocess_data(csv_path)
@@ -60,6 +74,7 @@ def preprocess_data(csv_path):
         for index, line in enumerate(fh):
             has_numeric = re.search(r'(,\s?[\d\.\+-],)+', line)
             if has_numeric is None:
+                logger.debug("session %d = %s", len(header_indices), line.strip())
                 header_indices.append(index)
 
     if len(header_indices) == 1:
