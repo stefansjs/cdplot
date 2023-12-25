@@ -178,8 +178,7 @@ def serialize_config(config, make_paths_absolute=False):
     return toml.dumps(config)
 
 
-def determine_columns(columns, config):
-    data_config = config['data']
+def determine_columns(columns, data_config):
     if data_config.get('columns'):
         return data_config['columns']
 
@@ -187,7 +186,7 @@ def determine_columns(columns, config):
 
     if data_config.get('include_pattern'):
         included_columns = lchain(*[fnmatch.filter(columns, pattern) for pattern in data_config['include_pattern']])
-        
+
     if data_config.get('include'):
         included_columns = included_columns or []
         include_set = set(data_config['include'])
@@ -214,19 +213,6 @@ def determine_columns(columns, config):
 
     if included_columns is not None:
         columns = included_columns
-
-
-    # Make sure we handle the x-axis
-    x_axis = config['plot'].get('x')
-    if x_axis is not None and x_axis not in columns:
-        config['plot']['y'] = columns
-        columns.insert(0, x_axis)
-    elif x_axis is not None and x_axis in columns:
-        config['plot']['y'] = list(columns)
-        config['plot']['y'].remove(x_axis)
-    elif columns:
-        config['plot']['x'] = columns[0]
-        config['plot']['y'] = columns[1:]
 
     data_config['columns'] = columns
 
