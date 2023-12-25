@@ -3,6 +3,7 @@ Handles reading config files and arguments to produce one config dictionary
 """
 import fnmatch
 import logging
+from itertools import chain
 from pathlib import Path
 
 import jsonschema
@@ -11,15 +12,16 @@ import toml
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = {
-    'csv_path': None,
     'output_path': None,
-    'session': None,
 
     'data': {
+        'csv_path': None,
+        'session': None,
         'include': [],
         'exclude': [],
         'include_pattern': [],
         'exclude_pattern': [],
+        'require': [],
         'index': None,
         'skipinitialspace': True,
         'parse_dates': True,
@@ -36,19 +38,19 @@ TOML_SCHEMA = {
         plot_torque_pro={
             'type': 'object',
             'properties': dict(
-                csv_path={'type': 'string'},
                 output_path={'type': 'string'},
-                session={'type': 'number'},
                 data={
                     'description': "Parameters relating to how data should be read from csv",
                     'type': 'object',
                     'properties': dict(
+                        csv_path={'type': 'string'},
+                        session={'type': 'number'},
+
                         index={'anyOf': [
                             dict(type='boolean'),  # default = False
                             dict(type='string'),   # one or more column names
                             dict(type='array', items={'type': 'string'}),
                         ]},
-
                         columns=STRING_ARRAY_SCHEMA,
                         include=STRING_ARRAY_SCHEMA,
                         exclude=STRING_ARRAY_SCHEMA,
@@ -84,6 +86,10 @@ TOML_SCHEMA = {
 
 def lfilter(*args):
     return list(filter(*args))
+
+
+def lchain(*args):
+    return list(chain(*args))
 
 
 def process_config(config_file=None, **config_args):
@@ -147,17 +153,25 @@ def merge_configs(config, overrides, parent_name='plot_torque_pro'):
 
 
 def normalize_config(config):
-    """ Make sure that every parameter is of the type expected """
+    """
+    Modifies the config in-place to handle any differences between toml parameters and implementation requirements
+    """
 
     # update paths to be a Path instance
-    config['csv_path'] = Path(config['csv_path']).expanduser()
+    config['data']['csv_path'] = Path(config['data']['csv_path']).expanduser()
     if config.get('output_path'):
         config['output_path'] = Path(config['output_path']).expanduser()
+
+    # Let's also do any needed data augmentation here
+    if config['plot'].get('x'):
+        config['data']['require'].insert(0, config['plot']['x'])
+    if config['plot'].get('y'):
+        config['data']['require'].extend(config['plot']['y'])
 
 
 def serialize_config(config, make_paths_absolute=False):
     # Essentially just un-does what's in normalize_config
-    config['csv_path'] = str(config['csv_path'])
+    config['data']['csv_path'] = str(config['data']['csv_path'])
     if config.get('output_path'):
         config['output_path'] = str(config['output_path'])
 
@@ -171,29 +185,36 @@ def determine_columns(columns, config):
 
     included_columns = None
 
+    if data_config.get('include_pattern'):
+        included_columns = lchain(*[fnmatch.filter(columns, pattern) for pattern in data_config['include_pattern']])
+        
     if data_config.get('include'):
+        included_columns = included_columns or []
         include_set = set(data_config['include'])
-        included_columns = lfilter(lambda c: c in include_set, columns)
+        existing_set = set(included_columns)
+        additional_includes = list(filter(lambda c: c in include_set and c not in existing_set, columns))
+        included_columns.extend(additional_includes)
         del data_config['include']
 
-    if data_config.get('include_pattern'):
-        included_columns = included_columns or []
-        for pattern in data_config['include_pattern']:
-            included_columns.extend(fnmatch.filter(columns, pattern))
-        del data_config['include_pattern']
+    if data_config.get('exclude_pattern'):
+        included_columns = included_columns or columns
+        for pattern in data_config['exclude_pattern']:
+            included_columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), included_columns)
+        del data_config['exclude_pattern']
+
+    if data_config.get('exclude'):
+        included_columns = included_columns or columns
+        exclude_set = set(data_config['exclude'])
+        included_columns = lfilter(lambda c: c not in exclude_set, included_columns)
+        del data_config['exclude']
+
+    if data_config.get('require') and included_columns is not None:
+        included_columns.extend(filter(lambda c: c not in included_columns, data_config['require']))
+
 
     if included_columns is not None:
         columns = included_columns
 
-    if data_config.get('exclude'):
-        exclude_set = set(data_config['exclude'])
-        columns = lfilter(lambda c: c not in exclude_set, columns)
-        del data_config['exclude']
-
-    if data_config.get('exclude_pattern'):
-        for pattern in data_config['exclude_pattern']:
-            columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), columns)
-        del data_config['exclude_pattern']
 
     # Make sure we handle the x-axis
     x_axis = config['plot'].get('x')
@@ -203,7 +224,7 @@ def determine_columns(columns, config):
     elif x_axis is not None and x_axis in columns:
         config['plot']['y'] = list(columns)
         config['plot']['y'].remove(x_axis)
-    else:
+    elif columns:
         config['plot']['x'] = columns[0]
         config['plot']['y'] = columns[1:]
 

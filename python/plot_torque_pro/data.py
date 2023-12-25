@@ -9,26 +9,24 @@ from pathlib import Path
 
 import pandas
 
-from .config import determine_columns
-
 logger = logging.getLogger(__name__)
 
 
-def load_from_csv(csv_path, config):
-    conf = config['data']
+def load_from_csv(config):
+    csv_path = config['csv_path']
 
-    if conf.get('default_type'):
-        dtypes = defaultdict(lambda: conf['default_type'])
-        dtypes.update(conf.get('dtype', {}))
-    elif conf.get('dtype'):
-        dtypes = conf['dtype']
+    if config.get('default_type'):
+        dtypes = defaultdict(lambda: config['default_type'])
+        dtypes.update(config.get('dtype', {}))
+    elif config.get('dtype'):
+        dtypes = config['dtype']
     else:
         dtypes = None
 
-    read_args = dict(skipinitialspace=conf['skipinitialspace'],
-                     parse_dates=conf['parse_dates'],
-                     date_format=conf.get('date_format'),
-                     index_col=conf['index'],
+    read_args = dict(skipinitialspace=config['skipinitialspace'],
+                     parse_dates=config['parse_dates'],
+                     date_format=config.get('date_format'),
+                     index_col=config['index'],
                      dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
@@ -40,9 +38,6 @@ def load_from_csv(csv_path, config):
         else:
             all_dataframes = [pandas.read_csv(f, **read_args) for f in sessions]
             csv_dataframe = pandas.concat(all_dataframes)
-
-    plot_columns = determine_columns(list(csv_dataframe.columns), config)
-    csv_dataframe = csv_dataframe[plot_columns].copy()
 
     return csv_dataframe
 

@@ -23,7 +23,7 @@ def main():
     config_path = args_dict.pop('config')
 
     config_dict = process_config(config_path, **args_dict)
-    plot_data(config_dict['csv_path'], config_dict)
+    plot_data(config_dict)
 
 
 if __name__ == '__main__':
