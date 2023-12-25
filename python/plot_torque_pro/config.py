@@ -3,11 +3,12 @@ Handles reading config files and arguments to produce one config dictionary
 """
 import fnmatch
 import logging
-from itertools import chain
 from pathlib import Path
 
 import jsonschema
 import toml
+
+from plot_torque_pro.functional import lfilter, lchain
 
 logger = logging.getLogger(__name__)
 
@@ -82,14 +83,6 @@ TOML_SCHEMA = {
     ),
     'requiredProperties': ['plot_torque_pro']
 }
-
-
-def lfilter(*args):
-    return list(filter(*args))
-
-
-def lchain(*args):
-    return list(chain(*args))
 
 
 def process_config(config_file=None, **config_args):
@@ -191,8 +184,7 @@ def determine_columns(columns, data_config):
         included_columns = included_columns or []
         include_set = set(data_config['include'])
         existing_set = set(included_columns)
-        additional_includes = list(filter(lambda c: c in include_set and c not in existing_set, columns))
-        included_columns.extend(additional_includes)
+        included_columns.extend(filter(lambda c: c in include_set and c not in existing_set, columns))
         del data_config['include']
 
     if data_config.get('exclude_pattern'):
