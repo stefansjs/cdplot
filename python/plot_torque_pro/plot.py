@@ -5,7 +5,7 @@ import logging
 
 import plotly.express
 
-from .config import serialize_config, determine_columns
+from .config import serialize_config
 from .data import load_from_csv
 
 logger = logging.getLogger(__name__)
@@ -28,12 +28,12 @@ def plot_data(config: dict):
 
 
 def render_plot(csv_data, config):
-    csv_data = _select_data(csv_data, config)
+    layout_data(csv_data, config)
     return plotly.express.line(csv_data, x=config['x'], y=config['y'])
 
 
-def _select_data(csv_dataframe, config):
-    plot_columns = determine_columns(list(csv_dataframe.columns), config)
+def layout_data(csv_dataframe, config):
+    plot_columns = list(csv_dataframe.columns)
 
     # Make sure we handle the x-axis
     x_axis = config.get('x')
@@ -46,5 +46,3 @@ def _select_data(csv_dataframe, config):
     elif plot_columns:
         config['x'] = plot_columns[0]
         config['y'] = plot_columns[1:]
-
-    return csv_dataframe[plot_columns].copy()
