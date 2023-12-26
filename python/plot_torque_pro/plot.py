@@ -37,10 +37,10 @@ def layout_data(csv_dataframe, config):
 
     # Make sure we handle the x-axis
     x_axis = config.get('x')
-    if x_axis is not None and x_axis not in plot_columns:
-        config['y'] = plot_columns
-        plot_columns.insert(0, x_axis)
-    elif x_axis is not None and x_axis in plot_columns:
+    y_axis = config.get('y')
+    y2_axis = config.get('y2')
+
+    if x_axis is not None and x_axis in plot_columns:
         config['y'] = list(plot_columns)
         config['y'].remove(x_axis)
     elif plot_columns:

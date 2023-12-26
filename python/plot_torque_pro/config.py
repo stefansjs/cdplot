@@ -160,6 +160,8 @@ def normalize_config(config):
         config['data']['require'].insert(0, config['plot']['x'])
     if config['plot'].get('y'):
         config['data']['require'].extend(config['plot']['y'])
+    if config['plot'].get('y2'):
+        config['data']['require'].extend(config['plot']['y2'])
 
 
 def serialize_config(config, make_paths_absolute=False):
@@ -168,7 +170,9 @@ def serialize_config(config, make_paths_absolute=False):
     if config.get('output_path'):
         config['output_path'] = str(config['output_path'])
 
-    return toml.dumps(config)
+    toml_config = dict(plot_torque_pro=config)
+
+    return toml.dumps(toml_config)
 
 
 def determine_columns(columns, data_config):
@@ -179,6 +183,7 @@ def determine_columns(columns, data_config):
 
     if data_config.get('include_pattern'):
         included_columns = lchain(*[fnmatch.filter(columns, pattern) for pattern in data_config['include_pattern']])
+        del data_config['include_pattern']
 
     if data_config.get('include'):
         included_columns = included_columns or []
@@ -186,6 +191,11 @@ def determine_columns(columns, data_config):
         existing_set = set(included_columns)
         included_columns.extend(filter(lambda c: c in include_set and c not in existing_set, columns))
         del data_config['include']
+
+        missing_columns = set(filter(lambda c: c not in set(included_columns), data_config['include']))
+        if missing_columns:
+            logger.warning("Some columns were requested in plot_torque_pro.data.include but are not in the csv: %s",
+                           missing_columns)
 
     if data_config.get('exclude_pattern'):
         included_columns = included_columns or columns
@@ -201,6 +211,11 @@ def determine_columns(columns, data_config):
 
     if data_config.get('require') and included_columns is not None:
         included_columns.extend(filter(lambda c: c not in included_columns, data_config['require']))
+
+        missing_columns = set(filter(lambda c: c not in set(included_columns), data_config['require']))
+        if missing_columns:
+            logger.error("The following required columns are not available: %s", missing_columns)
+            raise ValueError("Some columns were listed as required but they are not available in the csv")
 
 
     if included_columns is not None:
