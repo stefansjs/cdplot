@@ -158,10 +158,6 @@ def normalize_config(config):
     # Let's also do any needed data augmentation here
     if config['plot'].get('x'):
         config['data']['require'].insert(0, config['plot']['x'])
-    if config['plot'].get('y'):
-        config['data']['require'].extend(config['plot']['y'])
-    if config['plot'].get('y2'):
-        config['data']['require'].extend(config['plot']['y2'])
 
 
 def serialize_config(config, make_paths_absolute=False):
