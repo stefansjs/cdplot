@@ -49,7 +49,7 @@ def test_determine_columns_include_patterns():
     # test multiple criteria
     config = dict(include_pattern=['a*', 'c'])
     output = determine_columns(input, config)
-    assert set(output) == {'a', 'c', 'a2'}  # Order is not important
+    assert output == ['a', 'c', 'a2']  # Order is not important
 
 def test_determine_columns_exclude_patterns():
     input = ['a', 'b', 'c', 'a2', 'b2']
@@ -62,12 +62,12 @@ def test_determine_columns_exclude_patterns():
     # Test a more stringent criterion
     config = dict(exclude_pattern=['a*'])
     output = determine_columns(input, config)
-    assert set(output) == {'b', 'c', 'b2'}  # Order is not preserved
+    assert output == ['b', 'c', 'b2']  # Order is not preserved
 
     # test multiple criteria
     config = dict(exclude_pattern=['a*', 'c'])
     output = determine_columns(input, config)
-    assert set(output) == {'b', 'b2'}  # Order is not preserved
+    assert output == ['b', 'b2']  # Order is not preserved
 
 
 def test_determine_columns_include_and_exclude():
@@ -123,9 +123,9 @@ def test_determine_columns_require():
     assert output == ['a', 'b']
 
     # requires override excludes
-    config = data=dict(exclude_pattern=['a*'], require=['a'])
+    config = dict(exclude_pattern=['a*'], require=['a'])
     output = determine_columns(input, config)
-    assert set(output) == {'a', 'b', 'c', 'b2'}
+    assert output == ['a', 'b', 'c', 'b2']
 
 
 def test_normalize_config_xaxis():

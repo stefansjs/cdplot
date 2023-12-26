@@ -204,7 +204,8 @@ def determine_columns(columns, data_config):
 
 
     if included_columns is not None:
-        columns = included_columns
+        # Make the filter operations stable
+        columns = lfilter(lambda c: c in set(included_columns), columns)
 
     data_config['columns'] = columns
 
