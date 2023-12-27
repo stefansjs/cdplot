@@ -1,11 +1,15 @@
 """
 Handles reading config files and arguments to produce one config dictionary
 """
+import datetime
 import fnmatch
 import logging
+from collections import OrderedDict
 from pathlib import Path
 
 import jsonschema
+import pandas
+import plotly
 import toml
 
 from plot_torque_pro.functional import lfilter, lchain
@@ -163,15 +167,25 @@ def normalize_config(config):
         config['data']['require'].insert(0, config['plot']['x'])
 
 
-def serialize_config(config, make_paths_absolute=False):
-    # Essentially just un-does what's in normalize_config
-    config['data']['csv_path'] = str(config['data']['csv_path'])
-    if config.get('output_path'):
-        config['output_path'] = str(config['output_path'])
-
+def serialize_config(config):
+    _add_metadata(config)
     toml_config = dict(plot_torque_pro=config)
+    return toml.dumps(toml_config, toml.TomlEncoder(OrderedDict))
 
-    return toml.dumps(toml_config)
+
+def _add_metadata(config):
+    if '_metadata' not in config:
+        config['_metadata'] = {}
+
+    from plot_torque_pro import __version__
+    config['_metadata'].update(
+        rendered=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat(),
+        versions={
+            'plot_torque_pro': __version__,
+            'plotly': plotly.__version__,
+            'pandas': pandas.__version__,
+        }
+    )
 
 
 def determine_columns(columns, data_config):
@@ -180,10 +194,12 @@ def determine_columns(columns, data_config):
 
     included_columns = None
 
+    # deal with include patterns
     if data_config.get('include_pattern'):
         included_columns = lchain(*[fnmatch.filter(columns, pattern) for pattern in data_config['include_pattern']])
-        del data_config['include_pattern']
+    del data_config['include_pattern']
 
+    # followed by includes
     if data_config.get('include'):
         included_columns = included_columns or []
         include_set = set(data_config['include'])
@@ -194,21 +210,23 @@ def determine_columns(columns, data_config):
         if missing_columns:
             logger.warning("Some columns were requested in plot_torque_pro.data.include but are not in the csv: %s",
                            missing_columns)
+    del data_config['include']
 
-        del data_config['include']
-
+    # after all includes handle exclude patterns
     if data_config.get('exclude_pattern'):
         included_columns = included_columns or columns
         for pattern in data_config['exclude_pattern']:
             included_columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), included_columns)
-        del data_config['exclude_pattern']
+    del data_config['exclude_pattern']
 
+    # followed by excludes
     if data_config.get('exclude'):
         included_columns = included_columns or columns
         exclude_set = set(data_config['exclude'])
         included_columns = lfilter(lambda c: c not in exclude_set, included_columns)
-        del data_config['exclude']
+    del data_config['exclude']
 
+    # finally add back any required columns that weren't included so far
     if data_config.get('require') and included_columns is not None:
         included_columns.extend(filter(lambda c: c not in included_columns, data_config['require']))
 
@@ -216,12 +234,14 @@ def determine_columns(columns, data_config):
         if missing_columns:
             logger.error("The following required columns are not available: %s", missing_columns)
             raise ValueError("Some columns were listed as required but they are not available in the csv")
+    del data_config['require']
 
 
+    # Make the filter operations stable
     if included_columns is not None:
-        # Make the filter operations stable
         columns = lfilter(lambda c: c in set(included_columns), columns)
 
+    # update config with the final decision
     data_config['columns'] = columns
 
     return columns
