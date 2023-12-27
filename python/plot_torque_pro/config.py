@@ -187,12 +187,13 @@ def determine_columns(columns, data_config):
         include_set = set(data_config['include'])
         existing_set = set(included_columns)
         included_columns.extend(filter(lambda c: c in include_set and c not in existing_set, columns))
-        del data_config['include']
 
         missing_columns = set(filter(lambda c: c not in set(included_columns), data_config['include']))
         if missing_columns:
             logger.warning("Some columns were requested in plot_torque_pro.data.include but are not in the csv: %s",
                            missing_columns)
+
+        del data_config['include']
 
     if data_config.get('exclude_pattern'):
         included_columns = included_columns or columns
