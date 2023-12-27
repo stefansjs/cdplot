@@ -137,7 +137,7 @@ def merge_configs(config, overrides, parent_name='plot_torque_pro'):
             merged_config[key] = merge_configs(merged_config[key], value, parent_name=nested_name)
 
         elif isinstance(value, list):
-            merged_config[key] += value
+            merged_config[key] = list(merged_config[key]) + value
 
         else:
             merged_config[key] = value
