@@ -130,6 +130,7 @@ def merge_configs(config, overrides, parent_name='plot_torque_pro'):
     for key, value in overrides.items():
         if key not in merged_config or merged_config[key] is None:
             merged_config[key] = value
+            continue
 
         nested_name = key if parent_name is None else f'{parent_name}.{key}'
 
