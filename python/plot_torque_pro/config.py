@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
         'parse_dates': True,
     },
     'plot': {
-        'x': None,
+
     },
 }
 
@@ -72,10 +72,12 @@ TOML_SCHEMA = {
                     )
                 },
                 plot={
+                    'description': "Generally how data should be displayed",
                     'type': 'object',
                     'properties': dict(
                         x={'type': 'string'},
                         y=STRING_ARRAY_SCHEMA,
+                        y2=STRING_ARRAY_SCHEMA,
                     )
                 }
             ),
