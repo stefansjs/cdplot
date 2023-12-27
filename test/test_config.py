@@ -3,7 +3,47 @@
 """ Unit tests for plot_torque_pro.config """
 from pathlib import Path
 
-from plot_torque_pro.config import determine_columns, normalize_config
+from plot_torque_pro.config import determine_columns, normalize_config, merge_configs
+
+
+def test_merge_configs():
+    # empty + empty = empty
+    out = merge_configs({}, {})
+    assert out == {}
+
+    # merging in an empty dict should yield the original dict as a copy
+    config1 = dict(a=1, b='c', d=['a', 'b', 'c'])
+    config2 = {}
+    out = merge_configs(config1, config2)
+    assert out is not config1
+    assert out == config1
+
+    # same thing but other way around should yield the same result
+    out = merge_configs(config2, config1)
+    assert out == config1
+    assert out is not config1
+
+    # handle deeper structures. Merge lists together
+    config1 = dict(l=['a'])
+    config2 = dict(l=['b'])
+    out = merge_configs(config1, config2)
+    assert out == dict(l=['a', 'b'])
+    assert config1 != out
+    assert config2 != out
+
+    # merge dictionaries together
+    config1 = dict(d={'a': 1})
+    config2 = dict(d={'b': 2})
+    out = merge_configs(config1, config2)
+    assert out == dict(d={'a': 1, 'b': 2})
+    assert config1 != out
+    assert config2 != out
+
+    # test dictionary recursion
+    config1 = dict(d=dict(a=['b'], c=1, d={}))
+    config2 = dict(d=dict(a=[1], d={'a': 2}), l=[])
+    out = merge_configs(config1, config2)
+    assert out == dict(l=[], d=dict(a=['b', 1], c=1, d={'a': 2}))
 
 
 def test_determine_columns_nothing():
