@@ -49,12 +49,11 @@ def plot_data(config: dict):
 
 def augment_data(csv_data, config):
     # Augment data as needed
-    columns = list(csv_data.columns)
-    operations = create_data_operators(config, columns)
+    operations = create_data_operators(config, list(csv_data.columns))
     process_data(csv_data, operations)
 
     # Then truncate data as needed
-    plot_columns = determine_columns(columns, config['data'])
+    plot_columns = determine_columns(list(csv_data.columns), config['data'])
     return csv_data[plot_columns].copy()
 
 
