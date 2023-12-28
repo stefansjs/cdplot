@@ -213,7 +213,7 @@ def determine_columns(columns, data_config):
     # deal with include patterns
     if data_config.get('include_pattern'):
         included_columns = lchain(*[fnmatch.filter(columns, pattern) for pattern in data_config['include_pattern']])
-    del data_config['include_pattern']
+    data_config.pop('include_pattern', None)
 
     # followed by includes
     if data_config.get('include'):
@@ -226,21 +226,21 @@ def determine_columns(columns, data_config):
         if missing_columns:
             logger.warning("Some columns were requested in plot_torque_pro.data.include but are not in the csv: %s",
                            missing_columns)
-    del data_config['include']
+    data_config.pop('include', None)
 
     # after all includes handle exclude patterns
     if data_config.get('exclude_pattern'):
         included_columns = included_columns or columns
         for pattern in data_config['exclude_pattern']:
             included_columns = lfilter(lambda c: not fnmatch.fnmatch(c, pattern), included_columns)
-    del data_config['exclude_pattern']
+    data_config.pop('exclude_pattern', None)
 
     # followed by excludes
     if data_config.get('exclude'):
         included_columns = included_columns or columns
         exclude_set = set(data_config['exclude'])
         included_columns = lfilter(lambda c: c not in exclude_set, included_columns)
-    del data_config['exclude']
+    data_config.pop('exclude', None)
 
     # finally add back any required columns that weren't included so far
     if data_config.get('require') and included_columns is not None:
@@ -250,7 +250,7 @@ def determine_columns(columns, data_config):
         if missing_columns:
             logger.error("The following required columns are not available: %s", missing_columns)
             raise ValueError("Some columns were listed as required but they are not available in the csv")
-    del data_config['require']
+    data_config.pop('require', None)
 
 
     # Make the filter operations stable
