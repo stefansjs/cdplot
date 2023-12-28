@@ -31,7 +31,7 @@ def load_from_csv(config):
 
     # Split the data into multiple CSVs if necessary
     with preprocess_data(csv_path) as sessions:
-        if config.get('session'):
+        if config.get('session') is not None:
             csv_dataframe = pandas.read_csv(sessions[config['session']], **read_args)
         elif len(sessions) == 1:
             csv_dataframe = pandas.read_csv(sessions[0], **read_args)
