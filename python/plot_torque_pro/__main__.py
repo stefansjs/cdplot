@@ -49,7 +49,7 @@ def plot_data(config: dict):
 
 def augment_data(csv_data, config):
     # Augment data as needed
-    operations = create_data_operators(config, list(csv_data.columns))
+    operations = list(create_data_operators(config, list(csv_data.columns)))
     process_data(csv_data, operations)
 
     # Then truncate data as needed

@@ -1,6 +1,7 @@
 """
 Creates a bunch of operations to perform on columns of csv data
 """
+import logging
 import uuid
 from functools import partial
 
@@ -12,6 +13,8 @@ try:
 except ImportError:
     SCIPY_AVAILABLE = False
 
+
+logger = logging.getLogger(__name__)
 
 
 def create_data_operators(config, columns):
@@ -32,6 +35,7 @@ def create_data_operators(config, columns):
 
 def process_data(dataframe, operations):
     for operation in operations:
+        logger.debug("Performing %s", operation)
         operation(dataframe)
 
     return dataframe
@@ -153,10 +157,14 @@ class Operation:
     def __init__(self, op_config):
         self.source = op_config['source']
         self.dest = op_config['destination']
+        self.operation = op_config['type']
         self._func = self.build_operation(op_config)
 
     def __call__(self, csv_dataframe):
         csv_dataframe[self.dest] = self._func(csv_dataframe)
+
+    def __str__(self):
+        return f'{self.operation}("{self.source}" => "{self.dest}"): {self._func}'
 
 
     def _default(self, csv_dataframe, bound_operator):
