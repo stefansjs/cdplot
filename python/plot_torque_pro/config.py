@@ -71,7 +71,11 @@ TOML_SCHEMA = {
                         },
 
                         skipinitialspace={'type': 'boolean'},
-                        parse_dates={'type': 'boolean'},
+                        parse_dates={"anyOf": [
+                            {'type': 'boolean'},
+                            {'type': 'object'},
+                            {'type': 'array', 'items': {'type': 'string'}},
+                        ]},
                         date_format={'type': 'string'},
                         filters={
                             'type': 'array',
@@ -155,7 +159,7 @@ def merge_configs(config, overrides, parent_name='plot_torque_pro'):
         if isinstance(value, dict):
             merged_config[key] = merge_configs(merged_config[key], value, parent_name=nested_name)
 
-        elif isinstance(value, list):
+        elif isinstance(value, list) and isinstance(merged_config[key], list):
             merged_config[key] = list(merged_config[key]) + value
 
         else:
