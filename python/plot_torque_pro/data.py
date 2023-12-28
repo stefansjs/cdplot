@@ -44,6 +44,8 @@ def load_from_csv(config):
 
 def preprocess_data(csv_path):
     header_indices = []
+    temp_dir = Path(tempfile.mkdtemp(prefix='plot_torque_pro_'))
+
     with csv_path.open() as fh:
         for index, line in enumerate(fh):
             has_numeric = re.search(r'(,\s?[\d\.\+-],)+', line)
@@ -52,22 +54,27 @@ def preprocess_data(csv_path):
                 header_indices.append(index)
 
     if len(header_indices) == 1:
-        return TemporaryCSV([csv_path])
+        dest_path = Path(temp_dir) / f'cleaned.csv'
+        with dest_path.open('w') as out_file, csv_path.open('r') as in_file:
+            out_file.writelines(map(fix_torque_data, in_file))
 
-    # split the file into multiple files
-    csv_paths, tempdir = split_csv(csv_path, split_indices=header_indices + [index+1])
-    # and wrap the temporary files in a context manager for deleting the files when done
-    managed_csvs = TemporaryCSV(csv_paths, tempdir)
-    return managed_csvs
+        csv_paths = [dest_path]
+
+    else:
+        # split the file into multiple files
+        split_indices = header_indices + [index + 1]
+        csv_paths = split_csv(csv_path, split_indices, temp_dir)
+
+    return TemporaryCSV(csv_paths, temp_dir)
 
 
-def split_csv(csv_path, split_indices):
+
+
+def split_csv(csv_path, split_indices, temp_dir):
     split_indices = split_indices[1:] if split_indices[0] == 0 else split_indices
 
-    temp_dir = Path(tempfile.mkdtemp(prefix='plot_torque_pro'))
-
     with csv_path.open() as fh:
-        output_iter = iter(_next_file(split_indices, temp_dir))
+        output_iter = iter(CSVSplitter(split_indices, temp_dir))
         output_handle, next_index = next(output_iter)
 
         try:
@@ -83,10 +90,10 @@ def split_csv(csv_path, split_indices):
 
         except IOError:
             output_handle.close()
-            _cleanup_tmp(split_paths, temp_dir)
+            _cleanup_tmp(split_paths + [Path(output_handle.name)], temp_dir)
             raise
 
-    return split_paths, temp_dir
+    return split_paths
 
 
 def fix_torque_data(csv_line):
@@ -106,16 +113,19 @@ class TemporaryCSV:
             _cleanup_tmp(self.csv_paths, self.temp_dir)
 
 
-def _next_file(indices, dest_dir):
-    dest_path = Path(dest_dir)
+class CSVSplitter:
+    def __init__(self, indices, dest_dir):
+        self.indices = indices
+        self.dest_path = Path(dest_dir)
 
-    output_path = dest_path / f'session_0.csv'
-    for session_id, next_index in enumerate(indices):
-        output_handle = output_path.open('wt')
-        yield output_handle, next_index
+    def __iter__(self):
+        output_path = self.dest_path / f'session_0.csv'
+        for session_id, next_index in enumerate(self.indices):
+            output_handle = output_path.open('wt')
+            yield output_handle, next_index
 
-        output_handle.close()
-        output_path = dest_path / f'session_{session_id+1}.csv'
+            output_handle.close()
+            output_path = self.dest_path / f'session_{session_id+1}.csv'
 
 
 def _cleanup_tmp(split_paths, temp_dir):
