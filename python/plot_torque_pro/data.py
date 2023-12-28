@@ -9,8 +9,6 @@ from pathlib import Path
 
 import pandas
 
-from plot_torque_pro.config import determine_columns
-
 logger = logging.getLogger(__name__)
 
 
@@ -40,9 +38,6 @@ def load_from_csv(config):
         else:
             all_dataframes = [pandas.read_csv(f, **read_args) for f in sessions]
             csv_dataframe = pandas.concat(all_dataframes)
-
-    plot_columns = determine_columns(list(csv_dataframe.columns), config)
-    csv_dataframe = csv_dataframe[plot_columns].copy()
 
     return csv_dataframe
 

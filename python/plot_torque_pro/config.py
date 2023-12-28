@@ -73,6 +73,18 @@ TOML_SCHEMA = {
                         skipinitialspace={'type': 'boolean'},
                         parse_dates={'type': 'boolean'},
                         date_format={'type': 'string'},
+                        filters={
+                            'type': 'array',
+                            'items': {
+                                'type': 'object',
+                                'properties': dict(
+                                    source={'type': 'string'},
+                                    destination={'type': 'string'},
+                                    type={'type': 'string'},
+                                ),
+                                'requiredProperties': ['source', 'type']
+                            }
+                        },
                     )
                 },
                 plot={

@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 
 from plot_torque_pro.data import load_from_csv
+from plot_torque_pro.filters import create_data_operators, process_data
 from plot_torque_pro.plot import render_plot
-from .config import process_config, serialize_config
+from .config import process_config, serialize_config, determine_columns
 
 logger = logging.getLogger('plot_torque_pro')
 
@@ -31,6 +32,7 @@ def main():
 
 def plot_data(config: dict):
     csv_data = load_from_csv(config['data'])
+    csv_data = augment_data(csv_data, config)
     plot_handle = render_plot(csv_data, config['plot'])
 
     logger.debug("To reproduce this plot, put the following toml into its own config file\n%s",
@@ -43,6 +45,17 @@ def plot_data(config: dict):
         plot_handle.show()
 
     logger.info("done")
+
+
+def augment_data(csv_data, config):
+    # Augment data as needed
+    columns = list(csv_data.columns)
+    operations = create_data_operators(config, columns)
+    process_data(csv_data, operations)
+
+    # Then truncate data as needed
+    plot_columns = determine_columns(columns, config['data'])
+    return csv_data[plot_columns].copy()
 
 
 if __name__ == '__main__':
