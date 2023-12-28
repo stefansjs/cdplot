@@ -6,38 +6,20 @@ import logging
 import plotly.express
 from plotly.subplots import make_subplots
 
-from .config import serialize_config
-from .data import load_from_csv
 from .functional import lfilter
 
 logger = logging.getLogger(__name__)
 
 
-def plot_data(config: dict):
-    csv_data = load_from_csv(config['data'])
-    plot_handle = render_plot(csv_data, config['plot'])
+def render_plot(csv_data, plot_config):
+    configure_axes(csv_data, plot_config)
 
-    logger.debug("To reproduce this plot, put the following toml into its own config file\n%s",
-                 serialize_config(config))
+    fig = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y'])
 
-    if config.get('output_path'):
-        plot_handle.write_html(config['output_path'])
-        logger.info("Written to %s", str(config['output_path']))
-    else:
-        plot_handle.show()
-
-    logger.info("done")
-
-
-def render_plot(csv_data, config):
-    configure_axes(csv_data, config)
-
-    fig = plotly.express.line(csv_data, x=config['x'], y=config['y'])
-
-    if config['y2']:
+    if plot_config['y2']:
         twin_axes = make_subplots(specs=[[dict(secondary_y=True)]])
 
-        right_axis = plotly.express.line(csv_data, x=config['x'], y=config['y2'])
+        right_axis = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y2'])
         right_axis.update_traces(yaxis='y2')
 
         twin_axes.add_traces(fig.data + right_axis.data)

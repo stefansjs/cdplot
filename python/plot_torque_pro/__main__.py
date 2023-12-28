@@ -3,8 +3,11 @@ import logging
 import sys
 from pathlib import Path
 
-from .config import process_config
-from .plot import plot_data
+from plot_torque_pro.data import load_from_csv
+from plot_torque_pro.plot import render_plot
+from .config import process_config, serialize_config
+
+logger = logging.getLogger('plot_torque_pro')
 
 
 def main():
@@ -24,6 +27,22 @@ def main():
 
     config_dict = process_config(config_path, **args_dict)
     plot_data(config_dict)
+
+
+def plot_data(config: dict):
+    csv_data = load_from_csv(config['data'])
+    plot_handle = render_plot(csv_data, config['plot'])
+
+    logger.debug("To reproduce this plot, put the following toml into its own config file\n%s",
+                 serialize_config(config))
+
+    if config.get('output_path'):
+        plot_handle.write_html(config['output_path'])
+        logger.info("Written to %s", str(config['output_path']))
+    else:
+        plot_handle.show()
+
+    logger.info("done")
 
 
 if __name__ == '__main__':
