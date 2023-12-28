@@ -114,9 +114,12 @@ class DataOperators:
             'destination': 'delta_x',
             'type': 'difference',
             'align': 'right',
+            'dtype': 'float64',
         }
         self._intermediates['delta_x'] = delta_x
         self.operations.append(delta_x)
+
+        config['data']['exclude'].append('delta_x')
 
 
 class Operation:
@@ -135,17 +138,17 @@ class Operation:
     def _do_filter(self, csv_dataframe, lfilter):
         return lfilter(csv_dataframe[self.source])
 
-    def _do_difference(self, csv_dataframe, align=None):
+    def _do_difference(self, csv_dataframe, align=None, dtype=None):
         source = csv_dataframe[self.source].array
         diff = source[1:] - source[:-1]
 
         if align == 'left':
-            padded = np.zeros(source.shape, dtype=diff.dtype)
+            padded = np.zeros(source.shape, dtype=dtype or diff.dtype)
             padded[:-1] = diff
             return padded
 
         elif align == 'right':
-            padded = np.zeros(source.shape, dtype=diff.dtype)
+            padded = np.zeros(source.shape, dtype=dtype or diff.dtype)
             padded[1:] = diff
             return padded
 
@@ -177,7 +180,7 @@ class Operation:
                 return bind(self._do_multiply, constant=op_config['constant'])
 
         if op_type == 'difference':
-            return bind(self._do_difference, align=op_config['align'])
+            return bind(self._do_difference, align=op_config['align'], dtype=op_config.get('dtype'))
 
         if op_type == 'convolution':
             return bind(self._do_filter, bind(scipy.signal.convolve, in2=op_config['window']))
