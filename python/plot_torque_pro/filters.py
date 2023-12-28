@@ -91,6 +91,10 @@ class OperatorFactory:
             parameters = dict(column=op_config.get('column'), constant=op_config.get('constant'))
             self.add_product(source, destination, parameters)
 
+        elif filter_type == 'quotient':
+            parameters = dict(column=op_config.get('column'), constant=op_config.get('constant'))
+            self.add_quotient(source, destination, parameters)
+
 
     def add_operation(self, source, destination, op_type, op_parameters):
         self.operations.append(self.build_op(source, destination, op_type, op_parameters))
@@ -120,14 +124,15 @@ class OperatorFactory:
         config = dict(coefficients=coefficients, initial_conditions=initial_conditions)
         self.add_operation(source, destination, 'lfilter', config)
 
-
     def add_convolution(self, source, destination, window, offset=None):
         self.add_operation(source, destination, 'convolution', dict(window=window, offset=offset))
-
 
     def add_product(self, source, destination, config):
         """ Add a multiplication operation """
         self.add_operation(source, destination, 'product', config)
+
+    def add_quotient(self, source, destination, config):
+        self.add_operation(source, destination, 'quotient', config)
 
 
     def make_delta_x(self, config, columns):
@@ -173,10 +178,16 @@ class Operation:
         return diff
 
     def _do_multiply(self, csv_dataframe, constant=None, column=None):
-        if constant:
-            return csv_dataframe[self.source] * constant
-        else:
+        if column:
             return csv_dataframe[self.source] * csv_dataframe[column]
+        else:
+            return csv_dataframe[self.source] * constant
+
+    def _do_divide(self, csv_dataframe, constant=None, column=None):
+        if column:
+            return csv_dataframe[self.source] / csv_dataframe[column]
+        else:
+            return csv_dataframe[self.source] / constant
 
 
     def build_operation(self, op_config):
@@ -196,6 +207,12 @@ class Operation:
                 return bind(self._do_multiply, column=op_config['column'])
             else:
                 return bind(self._do_multiply, constant=op_config['constant'])
+
+        if op_type == 'quotient':
+            if op_config.get('column'):
+                return bind(self._do_divide, column=op_config['column'])
+            else:
+                return bind(self._do_divide, constant=op_config['constant'])
 
         if op_type == 'difference':
             return bind(self._do_difference, align=op_config['align'], dtype=op_config.get('dtype'))
