@@ -15,22 +15,18 @@ except ImportError:
 
 def create_data_operators(config, columns):
     """ Create data operators needs to know what columns are available, so it is called after loading data """
-
+    # If someone's already populated _operations, just use those
     if config['data'].get('_operations'):
-        return list(map(Operation, config['_operations']))  # If someone's already populated _operations, just use those
+        return list(map(Operation, config['_operations']))
 
+    # if nothing is specified, return an empty list
     if not config['data'].get('filters'):
-        return  # if nothing is specified
+        return []
 
-    operators = DataOperators()
-    for filt in config['data'].get('filters'):
-        operators.create_data_operator(filt, config, columns)
-
-    operations = operators.serialize()
-    config['data']['_operations'] = operations
-
-    all_operations = list(map(Operation, operations))
-    return all_operations
+    # build all operations and return them as an iterable of callables
+    factory = OperatorFactory()
+    factory.add_operations_to_config(config, columns)
+    return factory.build_operations()
 
 
 def process_data(dataframe, operations):
@@ -40,7 +36,7 @@ def process_data(dataframe, operations):
     return dataframe
 
 
-class DataOperators:
+class OperatorFactory:
     """ Stateful class for instantiating """
 
     # enum constant
@@ -50,10 +46,21 @@ class DataOperators:
         self._intermediates = {}
         self.operations = []
 
-    def serialize(self):
-        return self.operations
 
-    def create_data_operator(self, op_config, config, columns):
+    def build_operations(self):
+        return map(Operation, self.operations)
+
+
+    def add_operations_to_config(self, config, columns):
+        # Initialize config
+        config['data']['_operations'] = []
+        # hold a reference to that list so that we can modify it as build operations
+        self.operations = config['data']['_operations']
+
+        for filter_config in config['data'].get('filters'):
+            self.add_operator(config, filter_config, columns)
+
+    def add_operator(self, config, op_config, columns):
         """ Data operators should be created after data is loaded so that we know what the x_axis is """
 
         source = op_config['source']
