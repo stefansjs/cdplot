@@ -1,6 +1,7 @@
 """
 Creates a bunch of operations to perform on columns of csv data
 """
+import uuid
 from functools import partial
 
 import numpy as np
@@ -94,11 +95,20 @@ class OperatorFactory:
     def add_operation(self, source, destination, op_type, op_parameters):
         self.operations.append(self.build_op(source, destination, op_type, op_parameters))
 
-    def add_intermediate(self, config, source, dest, op_type, op_params):
-        op_config = self.build_op(source, dest, op_type, op_params)
-        self._intermediates['delta_x'] = op_config
+    def add_intermediate(self, config, source, op_type, op_params, name=None):
+        if name is not None and name in self._intermediates:
+            return  # short-circuit if it's already been added. This had better work
+
+        if name is None:
+            # If the destination doesn't have a name, create a unique name for it
+            name = f'plot_torque_pro-{len(self._intermediates)}-{uuid.uuid4()}'
+
+        op_config = self.build_op(source, name, op_type, op_params)
         self.operations.append(op_config)
-        config['data']['exclude'].append('delta_x')
+        self._intermediates[name] = op_config
+        config['data']['exclude'].append(name)
+
+        return name
 
     @staticmethod
     def build_op(source, destination, op_type, op_params):
@@ -126,11 +136,8 @@ class OperatorFactory:
         if 'delta_x' in self._intermediates:
             return
 
-        delta_x = {
-            'align': 'right',
-            'dtype': 'float64',
-        }
-        self.add_intermediate(config, source=x_axis, dest='delta_x', op_type='difference', op_params=delta_x)
+        delta_x = dict(align='right', dtype='float64')
+        self.add_intermediate(config, x_axis, 'difference', op_params=delta_x, name='delta_x')
 
 
 class Operation:
