@@ -69,17 +69,17 @@ class OperatorFactory:
         filter_type = op_config.get('type', 'lti')
 
         if filter_type == 'integral':
-            self.make_delta_x(config, columns)
-            self.add_lfilter(source, destination, coefficients=dict(numerator=[1, 0], denominator=[1, -1]))
-            self.add_product(destination, destination, dict(column='delta_x'))
+            delta_x = self.make_delta_x(config, columns)
+            product = self.add_intermediate(config, source, 'product', dict(column=delta_x))
+            self.add_lfilter(product, destination, coefficients=dict(numerator=[1], denominator=[1, -1]))
 
         elif filter_type == 'differential':
-            self.make_delta_x(config, columns)
-            self.add_lfilter(source, destination, coefficients=dict(numerator=[1, 0], denominator=[1, 1]))
-            self.add_product(destination, destination, dict(column='delta_x'))
+            delta_x = self.make_delta_x(config, columns)
+            product = self.add_intermediate(config, source, 'product', dict(column=delta_x))
+            self.add_lfilter(product, destination, coefficients=dict(numerator=[1], denominator=[1, 1]))
 
         elif filter_type == 'accumulator':
-            self.add_lfilter(source, destination, coefficients=dict(numerator=[1, 0], denominator=[1, -1]))
+            self.add_lfilter(source, destination, coefficients=dict(numerator=[1], denominator=[1, -1]))
 
         elif filter_type in ('lti', 'lfilter', 'linear_filter'):
             self.add_lfilter(source, destination, op_config['coefficients'], op_config.get('initial_conditions'))
@@ -137,12 +137,16 @@ class OperatorFactory:
 
     def make_delta_x(self, config, columns):
         x_axis = config['plot'].get('x', columns[0])
+        column = 'delta_x (h)'
 
-        if 'delta_x' in self._intermediates:
-            return
+        if column in self._intermediates:
+            return column
 
-        delta_x = dict(align='right', dtype='float64')
-        self.add_intermediate(config, x_axis, 'difference', op_params=delta_x, name='delta_x')
+        one_hour = np.timedelta64(1, 'h')
+        timedelta = self.add_intermediate(config, x_axis, 'difference', op_params=(dict(align='right')))
+        self.add_intermediate(config, timedelta, 'quotient', op_params=dict(constant=one_hour), name=column)
+
+        return column
 
 
 class Operation:
