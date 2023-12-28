@@ -91,23 +91,33 @@ class OperatorFactory:
             self.add_product(source, destination, parameters)
 
 
-    def add_operation(self, source, destination, op_config):
-        self.operations.append(dict(source=source, destination=destination, **op_config))
+    def add_operation(self, source, destination, op_type, op_parameters):
+        self.operations.append(self.build_op(source, destination, op_type, op_parameters))
+
+    def add_intermediate(self, config, source, dest, op_type, op_params):
+        op_config = self.build_op(source, dest, op_type, op_params)
+        self._intermediates['delta_x'] = op_config
+        self.operations.append(op_config)
+        config['data']['exclude'].append('delta_x')
+
+    @staticmethod
+    def build_op(source, destination, op_type, op_params):
+        return dict(source=source, destination=destination, type=op_type, **op_params)
 
 
     def add_lfilter(self, source, destination, coefficients, initial_conditions=None):
         """ Add a linear filter """
-        config = dict(type='lfilter', coefficients=coefficients, initial_conditions=initial_conditions)
-        self.add_operation(source, destination, config)
+        config = dict(coefficients=coefficients, initial_conditions=initial_conditions)
+        self.add_operation(source, destination, 'lfilter', config)
 
 
     def add_convolution(self, source, destination, window, offset=None):
-        self.add_operation(source, destination, dict(type='convolution', window=window, offset=offset))
+        self.add_operation(source, destination, 'convolution', dict(window=window, offset=offset))
 
 
     def add_product(self, source, destination, config):
         """ Add a multiplication operation """
-        self.add_operation(source, destination, dict(type='product', **config))
+        self.add_operation(source, destination, 'product', config)
 
 
     def make_delta_x(self, config, columns):
@@ -117,16 +127,10 @@ class OperatorFactory:
             return
 
         delta_x = {
-            'source': x_axis,
-            'destination': 'delta_x',
-            'type': 'difference',
             'align': 'right',
             'dtype': 'float64',
         }
-        self._intermediates['delta_x'] = delta_x
-        self.operations.append(delta_x)
-
-        config['data']['exclude'].append('delta_x')
+        self.add_intermediate(config, source=x_axis, dest='delta_x', op_type='difference', op_params=delta_x)
 
 
 class Operation:
