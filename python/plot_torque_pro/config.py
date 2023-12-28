@@ -186,7 +186,7 @@ def normalize_config(config):
 def serialize_config(config):
     _add_metadata(config)
     toml_config = dict(plot_torque_pro=config)
-    return toml.dumps(toml_config, toml.TomlEncoder(OrderedDict))
+    return toml.dumps(toml_config, toml.TomlPathlibEncoder(OrderedDict))
 
 
 def _add_metadata(config):
