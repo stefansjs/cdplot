@@ -27,6 +27,7 @@ def load_from_csv(config):
                      parse_dates=config['parse_dates'],
                      date_format=config.get('date_format'),
                      index_col=config['index'],
+                     na_values=config.get('na_values'),
                      dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
@@ -38,6 +39,11 @@ def load_from_csv(config):
         else:
             all_dataframes = [pandas.read_csv(f, **read_args) for f in sessions]
             csv_dataframe = pandas.concat(all_dataframes)
+
+    if config.get('dropna', False):
+        csv_dataframe.dropna(inplace=True)
+    elif config.get('fillna') is not None:
+        csv_dataframe.fillna(config['fillna'], inplace=True)
 
     return csv_dataframe
 
