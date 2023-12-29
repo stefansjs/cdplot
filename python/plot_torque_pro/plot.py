@@ -6,6 +6,7 @@ import logging
 import plotly.express
 from plotly.subplots import make_subplots
 
+from .exceptions import PlotTorqueProException
 from .functional import lfilter
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ def render_plot(csv_data, plot_config):
 def configure_axes(csv_dataframe, config):
     plot_columns = list(csv_dataframe.columns)
 
-    # Make sure we handle the x-axis
+    # Make sure we handle the axes
     x_axis = config.get('x')
     y_axis = config.get('y')
     y2_axis = config.get('y2')
@@ -47,6 +48,25 @@ def configure_axes(csv_dataframe, config):
     if y2_axis is not None:
         y_axis = lfilter(lambda c: c not in set(y2_axis), y_axis)
 
+
+    # Throw errors if necessary
+    if x_axis not in plot_columns:
+        logger.error("x-axis is not available. Double check you haven't misspelled a name: x-axis=\"%s\", columns=%s",
+                     x_axis, plot_columns)
+        raise PlotTorqueProException("axis is not available in csv, either because it's missing or it was excluded")
+
+    if any(y not in plot_columns for y in y_axis):
+        logger.error("y-axis is not available. Double check you haven't misspelled a name: x-axis=\"%s\", columns=%s",
+                     y_axis, plot_columns)
+        raise PlotTorqueProException("axis is not available in csv, either because it's missing or it was excluded")
+
+    if any(y not in plot_columns for y in y2_axis):
+        logger.error("y2-axis is not available. Double check you haven't misspelled a name: x-axis=\"%s\", columns=%s",
+                     y2_axis, plot_columns)
+        raise PlotTorqueProException("axis is not available in csv, either because it's missing or it was excluded")
+
+
+    # add to config
     config['x'] = x_axis
     config['y'] = y_axis
     config['y2'] = y2_axis
