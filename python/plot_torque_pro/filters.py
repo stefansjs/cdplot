@@ -21,7 +21,7 @@ def create_data_operators(config, columns):
     """ Create data operators needs to know what columns are available, so it is called after loading data """
     # If someone's already populated _operations, just use those
     if config['data'].get('_operations'):
-        return list(map(Operation, config['_operations']))
+        return list(map(Operation, config['data']['_operations']))
 
     # if nothing is specified, return an empty list
     if not config['data'].get('filters'):
@@ -99,6 +99,15 @@ class OperatorFactory:
             parameters = dict(column=op_config.get('column'), constant=op_config.get('constant'))
             self.add_quotient(source, destination, parameters)
 
+        elif filter_type == 'sum':
+            parameters = dict(column=op_config.get('column'), constant=op_config.get('constant'))
+            self.add_sum(source, destination, parameters)
+
+        elif filter_type == 'difference':
+            parameters = dict(column=op_config.get('column'), constant=op_config.get('constant'),
+                              align=op_config.get('align'), dtype=op_config.get('dtype'))
+            self.add_difference(source, destination, parameters)
+
 
     def add_operation(self, source, destination, op_type, op_parameters):
         self.operations.append(self.build_op(source, destination, op_type, op_parameters))
@@ -138,10 +147,18 @@ class OperatorFactory:
     def add_quotient(self, source, destination, config):
         self.add_operation(source, destination, 'quotient', config)
 
+    def add_sum(self, source, destination, config):
+        """ Add a multiplication operation """
+        self.add_operation(source, destination, 'sum', config)
+
+    def add_difference(self, source, destination, config):
+        """ Add a multiplication operation """
+        self.add_operation(source, destination, 'difference', config)
+
 
     def make_delta_x(self, config, columns):
         x_axis = config['plot'].get('x', columns[0])
-        column = 'delta_x (h)'
+        column = 'delta_x'
 
         if column in self._intermediates:
             return column
@@ -173,8 +190,16 @@ class Operation:
     def _do_filter(self, csv_dataframe, lfilter):
         return lfilter(csv_dataframe[self.source])
 
-    def _do_difference(self, csv_dataframe, align=None, dtype=None):
-        source = csv_dataframe[self.source].array
+    def _do_difference(self, csv_dataframe, constant=None, column=None, align=None, dtype=None):
+        source = csv_dataframe[self.source].to_numpy()
+
+        if constant is not None:
+            return source - constant
+
+        elif column is not None:
+            return source - csv_dataframe[column].array
+
+        # else, produce a difference signal by subtracting adjacent values from one another
         diff = source[1:] - source[:-1]
 
         if align == 'left':
@@ -227,7 +252,12 @@ class Operation:
                 return bind(self._do_divide, constant=op_config['constant'])
 
         if op_type == 'difference':
-            return bind(self._do_difference, align=op_config['align'], dtype=op_config.get('dtype'))
+            if op_config.get('column'):
+                return bind(self._do_difference, column=op_config['column'])
+            elif op_config.get('constant') is not None:
+                return bind(self._do_difference, constant=op_config['constant'])
+            else:
+                return bind(self._do_difference, align=op_config.get('align'), dtype=op_config.get('dtype'))
 
         if op_type == 'convolution':
             return bind(self._do_filter, bind(scipy.signal.convolve, in2=op_config['window']))
