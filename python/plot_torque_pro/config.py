@@ -22,14 +22,18 @@ DEFAULT_CONFIG = {
     'data': {
         'csv_path': None,
         'session': None,
+
         'include': [],
         'exclude': [],
         'include_pattern': [],
         'exclude_pattern': [],
         'require': [],
-        'index': None,
-        'skipinitialspace': True,
-        'parse_dates': True,
+
+        'read_csv': {
+            'index_col': None,  # confusingly, None means don't parse an index column
+            'skipinitialspace': True,
+            'parse_dates': True,
+        },
     },
     'plot': {
 
@@ -51,11 +55,6 @@ TOML_SCHEMA = {
                         csv_path={'type': 'string'},
                         session={'type': 'number'},
 
-                        index={'anyOf': [
-                            dict(type='boolean'),  # default = False
-                            dict(type='string'),   # one or more column names
-                            dict(type='array', items={'type': 'string'}),
-                        ]},
                         columns=STRING_ARRAY_SCHEMA,
                         include=STRING_ARRAY_SCHEMA,
                         exclude=STRING_ARRAY_SCHEMA,
@@ -63,20 +62,8 @@ TOML_SCHEMA = {
                         exclude_pattern=STRING_ARRAY_SCHEMA,
 
                         default_type={'type': 'string'},
-                        dtype={
-                            'type': 'object',
-                            'patternProperties': {
-                                "": {'type': 'string'}
-                            }
-                        },
+                        read_csv={'type': 'object', 'description': "Parameters passed as-is to pandas.read_csv()"},
 
-                        skipinitialspace={'type': 'boolean'},
-                        parse_dates={"anyOf": [
-                            {'type': 'boolean'},
-                            {'type': 'object'},
-                            {'type': 'array', 'items': {'type': 'string'}},
-                        ]},
-                        date_format={'type': 'string'},
                         filters={
                             'type': 'array',
                             'items': {

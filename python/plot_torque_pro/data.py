@@ -14,21 +14,17 @@ logger = logging.getLogger(__name__)
 
 def load_from_csv(config):
     csv_path = config['csv_path']
+    read_csv = config['read_csv']
 
+    # Because read_csv allows you to pass a defaultdict(), and that can't be represented in toml,
+    # we add default_type and do this custom logic
     if config.get('default_type'):
         dtypes = defaultdict(lambda: config['default_type'])
-        dtypes.update(config.get('dtype', {}))
-    elif config.get('dtype'):
-        dtypes = config['dtype']
+        dtypes.update(read_csv.get('dtype', {}))
     else:
-        dtypes = None
+        dtypes = read_csv.get('dtype')
 
-    read_args = dict(skipinitialspace=config['skipinitialspace'],
-                     parse_dates=config['parse_dates'],
-                     date_format=config.get('date_format'),
-                     index_col=config['index'],
-                     na_values=config.get('na_values'),
-                     dtype=dtypes)
+    read_args = dict(read_csv, dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
     with preprocess_data(csv_path) as sessions:
