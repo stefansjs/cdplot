@@ -28,7 +28,7 @@ def load_from_csv(config):
     read_args = dict(read_csv, dtype=dtypes)
 
     # Split the data into multiple CSVs if necessary
-    with preprocess_data(csv_path) as sessions:
+    with preprocess_data(*csv_path) as sessions:
         if config.get('session') is not None:
             csv_dataframe = pandas.read_csv(sessions[config['session']], **read_args)
         elif len(sessions) == 1:
@@ -45,39 +45,35 @@ def load_from_csv(config):
     return csv_dataframe
 
 
-def preprocess_data(csv_path):
-    header_indices = []
+def preprocess_data(*csv_paths):
+    session_paths = []
     temp_dir = Path(tempfile.mkdtemp(prefix='plot_torque_pro_'))
 
+    for csv_path in csv_paths:
+        session_paths.extend(preprocess_csv(csv_path, temp_dir, len(session_paths)))
+
+    return TemporaryCSV(session_paths, temp_dir)
+
+
+def preprocess_csv(csv_path, temp_dir, starting_session=0):
+    header_indices = []
     with csv_path.open() as fh:
         for index, line in enumerate(fh):
-            has_numeric = re.search(r'(,\s?[\d\.\+-],)+', line)
+            has_numeric = re.search(r'(,\s?-?\d+([\.,]\d*)?([eE]\d+[\.,]?\d*)?,)+', line)
             if has_numeric is None:
                 logger.debug("session %d = %s", len(header_indices), line.strip())
                 header_indices.append(index)
 
-    if len(header_indices) == 1:
-        dest_path = Path(temp_dir) / f'cleaned.csv'
-        with dest_path.open('w') as out_file, csv_path.open('r') as in_file:
-            out_file.writelines(map(fix_torque_data, in_file))
-
-        csv_paths = [dest_path]
-
-    else:
-        # split the file into multiple files
-        split_indices = header_indices + [index + 1]
-        csv_paths = split_csv(csv_path, split_indices, temp_dir)
-
-    return TemporaryCSV(csv_paths, temp_dir)
+    # split the file into multiple files, and cleanup data
+    split_indices = header_indices + [index + 1]
+    return split_csv(csv_path, split_indices, temp_dir, starting_session)
 
 
-
-
-def split_csv(csv_path, split_indices, temp_dir):
+def split_csv(csv_path, split_indices, temp_dir, starting_session=0):
     split_indices = split_indices[1:] if split_indices[0] == 0 else split_indices
 
     with csv_path.open() as fh:
-        output_iter = iter(CSVSplitter(split_indices, temp_dir))
+        output_iter = iter(CSVSplitter(split_indices, temp_dir, starting_session))
         output_handle, next_index = next(output_iter)
 
         try:
@@ -117,18 +113,19 @@ class TemporaryCSV:
 
 
 class CSVSplitter:
-    def __init__(self, indices, dest_dir):
+    def __init__(self, indices, dest_dir, start_index=0):
         self.indices = indices
         self.dest_path = Path(dest_dir)
+        self.start_index = start_index
 
     def __iter__(self):
-        output_path = self.dest_path / f'session_0.csv'
-        for session_id, next_index in enumerate(self.indices):
+        output_path = self.dest_path / f'session_{self.start_index}.csv'
+        for session_index, next_index in enumerate(self.indices):
             output_handle = output_path.open('wt')
             yield output_handle, next_index
 
             output_handle.close()
-            output_path = self.dest_path / f'session_{session_id+1}.csv'
+            output_path = self.dest_path / f'session_{self.start_index + session_index + 1}.csv'
 
 
 def _cleanup_tmp(split_paths, temp_dir):

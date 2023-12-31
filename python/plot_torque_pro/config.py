@@ -52,7 +52,10 @@ TOML_SCHEMA = {
                     'description': "Parameters relating to how data should be read from csv",
                     'type': 'object',
                     'properties': dict(
-                        csv_path={'type': 'string'},
+                        csv_path={'anyOf': [
+                            {'type': 'string'},
+                            {'type': 'array', 'items': {'type': 'string'}},
+                        ]},
                         session={'type': 'number'},
 
                         columns=STRING_ARRAY_SCHEMA,
@@ -168,7 +171,10 @@ def normalize_config(config):
     """
 
     # update paths to be a Path instance
-    config['data']['csv_path'] = Path(config['data']['csv_path']).expanduser()
+    if isinstance(config['data']['csv_path'], str):
+        config['data']['csv_path'] = [config['data']['csv_path']]
+
+    config['data']['csv_path'] = [Path(path).expanduser() for path in config['data']['csv_path']]
     if config.get('output_path'):
         config['output_path'] = Path(config['output_path']).expanduser()
 
