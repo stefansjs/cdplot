@@ -8,6 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import pandas
+from pandas._libs.lib import no_default
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def load_from_csv(config):
             csv_dataframe = pandas.concat(all_dataframes)
 
     if config.get('dropna', False):
-        csv_dataframe.dropna(inplace=True)
+        csv_dataframe.dropna(inplace=True, thresh=config.get('dropna_threshold', no_default))
     elif config.get('fillna') is not None:
         csv_dataframe.fillna(config['fillna'], inplace=True)
 

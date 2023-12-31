@@ -64,6 +64,13 @@ TOML_SCHEMA = {
                         default_type={'type': 'string'},
                         read_csv={'type': 'object', 'description': "Parameters passed as-is to pandas.read_csv()"},
 
+                        dropna={'type': 'boolean'},
+                        dropna_threshold={'type': 'number'},
+                        fillna={'anyOf': [
+                            {'type': 'number'},
+                            {'type': 'string'}
+                        ]},
+
                         filters={
                             'type': 'array',
                             'items': {
