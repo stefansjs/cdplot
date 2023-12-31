@@ -7,6 +7,8 @@ from functools import partial
 
 import numpy as np
 
+from plot_torque_pro.exceptions import PlotTorqueProException
+
 try:
     import scipy
     SCIPY_AVAILABLE = True
@@ -190,6 +192,12 @@ class Operation:
     def _do_filter(self, csv_dataframe, lfilter):
         return lfilter(csv_dataframe[self.source])
 
+    def _do_sum(self, csv_dataframe, constant=None, column=None):
+        if column:
+            return csv_dataframe[self.source] + csv_dataframe[column]
+        else:
+            return csv_dataframe[self.source] * constant
+
     def _do_difference(self, csv_dataframe, constant=None, column=None, align=None, dtype=None):
         source = csv_dataframe[self.source].to_numpy()
 
@@ -251,6 +259,12 @@ class Operation:
             else:
                 return bind(self._do_divide, constant=op_config['constant'])
 
+        if op_type == 'sum':
+            if op_config.get('column'):
+                return bind(self._do_sum, column=op_config['column'])
+            else:
+                return bind(self._do_sum, constant=op_config['constant'])
+
         if op_type == 'difference':
             if op_config.get('column'):
                 return bind(self._do_difference, column=op_config['column'])
@@ -261,6 +275,8 @@ class Operation:
 
         if op_type == 'convolution':
             return bind(self._do_filter, bind(scipy.signal.convolve, in2=op_config['window']))
+
+        raise PlotTorqueProException(f"Unknown operation: {op_type}")
 
 
 def bind(method, *op_args, **op_kwargs):
