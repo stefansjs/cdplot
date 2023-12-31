@@ -27,7 +27,11 @@ def main():
     config_path = args_dict.pop('config', None)
 
     config_dict = process_config(config_path, **args_dict)
-    plot_data(config_dict)
+    try:
+        plot_data(config_dict)
+    except Exception:
+        logger.error("Plotting failed. Here's the config\n%s", serialize_config(config_dict))
+        raise
 
 
 def plot_data(config: dict):
