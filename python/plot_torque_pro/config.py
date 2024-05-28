@@ -174,7 +174,8 @@ def normalize_config(config):
     if isinstance(config['data']['csv_path'], str):
         config['data']['csv_path'] = [config['data']['csv_path']]
 
-    config['data']['csv_path'] = [Path(path).expanduser() for path in config['data']['csv_path']]
+    if config['data']['csv_path']:
+        config['data']['csv_path'] = [Path(path).expanduser() for path in config['data']['csv_path']]
     if config.get('output_path'):
         config['output_path'] = Path(config['output_path']).expanduser()
 

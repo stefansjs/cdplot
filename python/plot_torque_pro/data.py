@@ -17,6 +17,9 @@ def load_from_csv(config):
     csv_path = config['csv_path']
     read_csv = config['read_csv']
 
+    if not csv_path:
+        raise ValueError("Nothing to plot")
+
     # Because read_csv allows you to pass a defaultdict(), and that can't be represented in toml,
     # we add default_type and do this custom logic
     if config.get('default_type'):
