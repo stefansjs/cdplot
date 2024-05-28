@@ -18,14 +18,24 @@ def render_plot(csv_data, plot_config):
     fig = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y'])
 
     if plot_config['y2']:
-        twin_axes = make_subplots(specs=[[dict(secondary_y=True)]])
+        fig = plot_twin_x(csv_data, fig, plot_config)
 
-        right_axis = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y2'])
-        right_axis.update_traces(yaxis='y2')
+    if 'hovertemplate' in plot_config:
+        fig.update_traces(hovertemplate=plot_config['hovertemplate'])
+    if plot_config.get('hovermode'):
+        fig.update_layout(hovermode=plot_config['hovermode'])
 
-        twin_axes.add_traces(fig.data + right_axis.data)
-        fig = twin_axes
+    return fig
 
+
+def plot_twin_x(csv_data, fig, plot_config):
+    twin_axes = make_subplots(specs=[[dict(secondary_y=True)]])
+
+    right_axis = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y2'])
+    right_axis.update_traces(yaxis='y2')
+
+    twin_axes.add_traces(fig.data + right_axis.data)
+    fig = twin_axes
     return fig
 
 
