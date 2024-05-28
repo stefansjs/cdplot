@@ -70,7 +70,7 @@ def configure_axes(csv_dataframe, config):
                      y_axis, plot_columns)
         raise PlotTorqueProException("axis is not available in csv, either because it's missing or it was excluded")
 
-    if any(y not in plot_columns for y in y2_axis):
+    if y2_axis and any(y not in plot_columns for y in y2_axis):
         logger.error("y2-axis is not available. Double check you haven't misspelled a name: x-axis=\"%s\", columns=%s",
                      y2_axis, plot_columns)
         raise PlotTorqueProException("axis is not available in csv, either because it's missing or it was excluded")

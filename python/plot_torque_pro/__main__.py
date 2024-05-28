@@ -14,7 +14,7 @@ logger = logging.getLogger('plot_torque_pro')
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--csv-path', '-f', type=Path)
+    parser.add_argument('--csv-path', '-f', type=Path, nargs='*')
     parser.add_argument('--config', '-c', type=Path)
     parser.add_argument('--include', '-i', action='append')
     parser.add_argument('--exclude', '-e', action='append')
