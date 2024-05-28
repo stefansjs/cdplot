@@ -1,0 +1,6 @@
+*.pyc
+__pycache__
+dist
+
+.venv
+.pytest_cache
