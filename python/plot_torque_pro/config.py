@@ -105,6 +105,7 @@ TOML_SCHEMA = {
 
 
 def process_config(config_file=None, **config_args):
+    """ loads config file and adds/updates parameters with command-line parameters """
     if config_file is None and not config_args:
         # base case
         return DEFAULT_CONFIG

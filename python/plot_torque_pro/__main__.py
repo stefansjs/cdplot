@@ -53,6 +53,7 @@ def plot_data(config: dict):
 
 
 def augment_data(csv_data, config):
+    """ Augments or updates csv data with any operations specified in the config """
     # Augment data as needed
     operations = list(create_data_operators(config, list(csv_data.columns)))
     process_data(csv_data, operations)

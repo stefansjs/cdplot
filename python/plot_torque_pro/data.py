@@ -49,6 +49,12 @@ def load_from_csv(config):
 
 
 def preprocess_data(*csv_paths):
+    """
+    Splits each csv files into one or more "session" csv files and returns a flat list of all session files
+
+    CSV files are allows to have multiple header rows. Each time we see a header, we might have different columns.
+    Split each into "session" csv files every time we see a new header row.
+    """
     session_paths = []
     temp_dir = Path(tempfile.mkdtemp(prefix='plot_torque_pro_'))
 
@@ -59,6 +65,7 @@ def preprocess_data(*csv_paths):
 
 
 def preprocess_csv(csv_path, temp_dir, starting_session=0):
+    """ Looks for likely header rows, and calls split_csv to output multiple "session" csv files """
     header_indices = []
     with csv_path.open() as fh:
         for index, line in enumerate(fh):
@@ -73,6 +80,7 @@ def preprocess_csv(csv_path, temp_dir, starting_session=0):
 
 
 def split_csv(csv_path, split_indices, temp_dir, starting_session=0):
+    """ Writes multiple csv files from one csv file, splitting at the given rows """
     split_indices = split_indices[1:] if split_indices[0] == 0 else split_indices
 
     with csv_path.open() as fh:
