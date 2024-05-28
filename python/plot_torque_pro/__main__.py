@@ -18,7 +18,8 @@ def main():
     parser.add_argument('--config', '-c', type=Path)
     parser.add_argument('--include', '-i', action='append')
     parser.add_argument('--exclude', '-e', action='append')
-    parser.add_argument('--include-glob', '-g', help='glob pattern for including columns to plot')
+    parser.add_argument('--include-pattern', '-I', help='glob pattern for including columns to plot')
+    parser.add_argument('--exclude-pattern', '-E', help='glob pattern for excluding columns from the plot')
     arguments = parser.parse_args()
     args_dict = dict(vars(arguments))
 
