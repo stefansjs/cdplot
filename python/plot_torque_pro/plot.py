@@ -15,15 +15,19 @@ logger = logging.getLogger(__name__)
 def render_plot(csv_data, plot_config):
     configure_axes(csv_data, plot_config)
 
-    fig = plotly.express.line(csv_data, x=plot_config['x'], y=plot_config['y'])
+    y2 = plot_config.pop('y2', None)
+    hovertemplate = plot_config.pop('hovertemplate', None)
+    hovermode = plot_config.pop('hovermode', None)
 
-    if plot_config['y2']:
+    fig = plotly.express.line(csv_data, **plot_config)
+
+    if y2:
         fig = plot_twin_x(csv_data, fig, plot_config)
 
-    if 'hovertemplate' in plot_config:
-        fig.update_traces(hovertemplate=plot_config['hovertemplate'])
-    if plot_config.get('hovermode'):
-        fig.update_layout(hovermode=plot_config['hovermode'])
+    if hovertemplate:
+        fig.update_traces(hovertemplate=hovertemplate)
+    if hovermode:
+        fig.update_layout(hovermode=hovermode)
 
     return fig
 
