@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "plot-torque-pro"
-version = "0.1.0"
+version = "1.0a"
 description = "Plots sensor data from Torque Pro"
 authors = ["Stefan Sullivan <stefan.sullivan@gmail.com>"]
 license = "MIT"
