@@ -16,10 +16,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--csv-path', '-f', type=Path, nargs='*')
     parser.add_argument('--config', '-c', type=Path)
+    parser.add_argument('--output-path', '-o', type=Path)
+    # data config parameters
+    parser.add_argument('--session', '-s', type=int)
+    parser.add_argument('--columns', nargs='*')
     parser.add_argument('--include', '-i', action='append')
     parser.add_argument('--exclude', '-e', action='append')
     parser.add_argument('--include-pattern', '-I', help='glob pattern for including columns to plot')
     parser.add_argument('--exclude-pattern', '-E', help='glob pattern for excluding columns from the plot')
+    parser.add_argument('--default-type')
+    parser.add_argument('--dropna', '--drop-na', type=bool, help='pandas.read_csv dropna argument')
+    parser.add_argument('--dropna-threshold', '--drop-na-threshold', type=bool, help='pandas.read_csv dropna_threshold argument')
+    parser.add_argument('--fillna', '--fill-na', type=bool, help='pandas.read_csv fillna argument')
+    # plot config parameters
+    parser.add_argument('--x', '-x', help='column to use for the x-axis')
+    parser.add_argument('--y', '-y', help='column(s) to use for the y-axis', nargs='*')
+    parser.add_argument('--y2', help='column(s) to use for the right y axis', nargs='*')
     arguments = parser.parse_args()
     args_dict = dict(vars(arguments))
 
