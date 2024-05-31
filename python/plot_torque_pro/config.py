@@ -132,9 +132,9 @@ def args_to_config(argparse_args):
     root_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties'].keys()
 
     data_dict = {key: value for key, value in argparse_args.items() if key in data_keys}
-    plot_dict = {key: value for key, value in argparse_args.items() if key in plot_keys}
-
+    plot_dict = {key: value for key, value in argparse_args.items() if key not in set(data_keys).union(root_keys)}
     args_config = {key: value for key, value in argparse_args.items() if key in root_keys}
+
     if data_dict:
         args_config['data'] = data_dict
     if plot_dict:
