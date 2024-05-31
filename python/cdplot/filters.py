@@ -7,7 +7,7 @@ from functools import partial
 
 import numpy as np
 
-from plot_torque_pro.exceptions import PlotTorqueProException
+from cdplot.exceptions import PlotTorqueProException
 
 try:
     import scipy

@@ -12,7 +12,7 @@ import pandas
 import plotly
 import toml
 
-from plot_torque_pro.functional import lfilter, lchain
+from cdplot.functional import lfilter, lchain
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,7 @@ def _add_metadata(config):
     if '_metadata' not in config:
         config['_metadata'] = {}
 
-    from plot_torque_pro import __version__
+    from cdplot import __version__
     config['_metadata'].update(
         rendered=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat(),
         versions={

@@ -3,9 +3,9 @@ import logging
 import sys
 from pathlib import Path
 
-from plot_torque_pro.data import load_from_csv
-from plot_torque_pro.filters import create_data_operators, process_data
-from plot_torque_pro.plot import render_plot
+from cdplot.data import load_from_csv
+from cdplot.filters import create_data_operators, process_data
+from cdplot.plot import render_plot
 from .config import process_config, serialize_config, determine_columns
 
 logger = logging.getLogger('plot_torque_pro')

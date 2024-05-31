@@ -3,7 +3,7 @@
 """ Unit tests for plot_torque_pro.config """
 from pathlib import Path
 
-from plot_torque_pro.config import determine_columns, normalize_config, merge_configs
+from cdplot.config import determine_columns, normalize_config, merge_configs
 
 
 def test_merge_configs():
