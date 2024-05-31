@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "plot-torque-pro"
+name = "cdplot"
 version = "1.0a"
-description = "Plots sensor data from Torque Pro"
+description = "Plots csv data using plotly library"
 authors = ["Stefan Sullivan <stefan.sullivan@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [
-    { include = "plot_torque_pro", from = "python" },
+    { include = "cdplot", from = "python" },
 ]
 
 [tool.poetry.dependencies]
