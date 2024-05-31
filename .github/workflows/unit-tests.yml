@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# This workflow will install Python dependencies and run tests with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: unit-tests
@@ -27,8 +27,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install poetry
-        python -m poetry install --with ${{ matrix.options }}
+        python -m pip install .[${{ matrix.options }}]
     - name: Test with pytest
       run: |
-        pytest
+        python -m pytest
