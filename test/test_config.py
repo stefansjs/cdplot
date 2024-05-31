@@ -174,9 +174,9 @@ def test_normalize_config_xaxis():
     # test setting only the x-axis. I should get everything back without filters
     config = dict(minimum_config, plot=dict(x='a'))
     normalize_config(config)
-    assert config == dict(data=dict(csv_path=Path('.'), require=['a']), plot=dict(x='a'))
+    assert config == dict(data=dict(csv_path=[Path('.')], require=['a']), plot=dict(x='a'))
 
     # test that the x-axis gets added, even if it's filtered out
     config = dict(data=dict(csv_path="", require=[], exclude=['a']), plot=dict(x='a'))
     normalize_config(config)
-    assert config == dict(data=dict(csv_path=Path('.'), exclude=['a'], require=['a']), plot=dict(x='a'))
+    assert config == dict(data=dict(csv_path=[Path('.')], exclude=['a'], require=['a']), plot=dict(x='a'))
