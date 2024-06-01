@@ -8,7 +8,7 @@ from cdplot.filters import create_data_operators, process_data
 from cdplot.plot import render_plot
 from .config import process_config, serialize_config, determine_columns
 
-logger = logging.getLogger('plot_torque_pro')
+logger = logging.getLogger('cdplot')
 
 
 def main():

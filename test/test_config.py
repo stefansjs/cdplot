@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Unit tests for plot_torque_pro.config """
+""" Unit tests for cdplot.config """
 from pathlib import Path
 
 from cdplot.config import determine_columns, normalize_config, merge_configs

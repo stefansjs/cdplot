@@ -120,7 +120,7 @@ class OperatorFactory:
 
         if name is None:
             # If the destination doesn't have a name, create a unique name for it
-            name = f'plot_torque_pro-{len(self._intermediates)}-{uuid.uuid4()}'
+            name = f'cdplot-{len(self._intermediates)}-{uuid.uuid4()}'
 
         op_config = self.build_op(source, name, op_type, op_params)
         self.operations.append(op_config)

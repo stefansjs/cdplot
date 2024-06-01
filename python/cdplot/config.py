@@ -6,6 +6,7 @@ import fnmatch
 import logging
 from collections import OrderedDict
 from pathlib import Path
+from warnings import warn
 
 import jsonschema
 import pandas
@@ -44,7 +45,7 @@ STRING_ARRAY_SCHEMA = {'type': 'array', 'items': {'type': 'string'}}
 TOML_SCHEMA = {
     'type': 'object',
     'properties': dict(
-        plot_torque_pro={
+        cdplot={
             'type': 'object',
             'properties': dict(
                 output_path={'type': 'string'},
@@ -100,7 +101,7 @@ TOML_SCHEMA = {
             ),
         }
     ),
-    'requiredProperties': ['plot_torque_pro']
+    'requiredProperties': ['cdplot']
 }
 
 
@@ -113,9 +114,9 @@ def process_config(config_file=None, **config_args):
     config = dict(DEFAULT_CONFIG)
 
     if config_file is not None:
-        config_from_toml = toml.load(config_file)
+        config_from_toml = load_config(config_file)
         jsonschema.validate(config_from_toml, TOML_SCHEMA)
-        config = merge_configs(config, config_from_toml['plot_torque_pro'])
+        config = merge_configs(config, config_from_toml['cdplot'])
 
     # command-line arguments should override the config file(s)
     config_overrides = args_to_config(config_args)
@@ -126,10 +127,25 @@ def process_config(config_file=None, **config_args):
     return config
 
 
+def load_config(config_file):
+    config_dict = toml.load(config_file)
+
+    if 'plot_torque_pro' in config_dict and 'cdplot' in config_dict:
+        # This warning should disappear after an appropriate number of version bumps
+        logger.warning("Both [plot_torque_pro] and [cdplot] sections are in the same config. Ignoring plot_torque_pro")
+        return dict(cdplot=config_dict['cdplot'])
+
+    if 'plot_torque_pro' in config_dict:
+        warn(f"[plot_torque_pro] section in config file is deprecated. From: {config_file}", DeprecationWarning)
+        return dict(cdplot=config_dict['plot_torque_pro'])
+
+    return config_dict
+
+
 def args_to_config(argparse_args):
-    data_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties']['data']['properties'].keys()
-    plot_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties']['plot']['properties'].keys()
-    root_keys = TOML_SCHEMA['properties']['plot_torque_pro']['properties'].keys()
+    data_keys = TOML_SCHEMA['properties']['cdplot']['properties']['data']['properties'].keys()
+    plot_keys = TOML_SCHEMA['properties']['cdplot']['properties']['plot']['properties'].keys()
+    root_keys = TOML_SCHEMA['properties']['cdplot']['properties'].keys()
 
     data_dict = {key: value for key, value in argparse_args.items() if key in data_keys}
     plot_dict = {key: value for key, value in argparse_args.items() if key not in set(data_keys).union(root_keys)}
@@ -143,7 +159,7 @@ def args_to_config(argparse_args):
     return args_config
 
 
-def merge_configs(config, overrides, parent_name='plot_torque_pro'):
+def merge_configs(config, overrides, parent_name='cdplot'):
     # this method should probably take a strategy of some kind
     merged_config = dict(config)
 
@@ -187,7 +203,7 @@ def normalize_config(config):
 
 def serialize_config(config):
     _add_metadata(config)
-    toml_config = dict(plot_torque_pro=config)
+    toml_config = dict(cdplot=config)
     return toml.dumps(toml_config, toml.TomlPathlibEncoder(OrderedDict))
 
 
@@ -199,7 +215,7 @@ def _add_metadata(config):
     config['_metadata'].update(
         rendered=datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat(),
         versions={
-            'plot_torque_pro': __version__,
+            'cdplot': __version__,
             'plotly': plotly.__version__,
             'pandas': pandas.__version__,
         }
@@ -226,7 +242,7 @@ def determine_columns(columns, data_config):
 
         missing_columns = set(filter(lambda c: c not in set(included_columns), data_config['include']))
         if missing_columns:
-            logger.warning("Some columns were requested in plot_torque_pro.data.include but are not in the csv: %s",
+            logger.warning("Some columns were requested in cdplot.data.include but are not in the csv: %s",
                            missing_columns)
     data_config.pop('include', None)
 

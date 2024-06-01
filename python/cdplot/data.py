@@ -56,7 +56,7 @@ def preprocess_data(*csv_paths):
     Split each into "session" csv files every time we see a new header row.
     """
     session_paths = []
-    temp_dir = Path(tempfile.mkdtemp(prefix='plot_torque_pro_'))
+    temp_dir = Path(tempfile.mkdtemp(prefix='cdplot_'))
 
     for csv_path in csv_paths:
         session_paths.extend(preprocess_csv(csv_path, temp_dir, len(session_paths)))

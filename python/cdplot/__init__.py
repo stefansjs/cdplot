@@ -1,5 +1,5 @@
 """
-Package for plot_torque_pro
+Package for from cdplot
 """
 
 
@@ -7,5 +7,5 @@ __version__ = "1.0a"
 
 
 def get_version():
-    """ Returns the package and build version of plot_torque_pro """
+    """ Returns the package and build version of from cdplot """
     return __version__
