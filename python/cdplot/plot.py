@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 def render_plot(csv_data, plot_config):
     configure_axes(csv_data, plot_config)
 
+    plot_type = plot_config.pop('type', 'line')
     y2 = plot_config.pop('y2', None)
     hovertemplate = plot_config.pop('hovertemplate', None)
     hovermode = plot_config.pop('hovermode', None)
 
-    fig = plotly.express.line(csv_data, **plot_config)
+    plot_renderer = getattr(plotly.express, plot_type)
+    fig = plot_renderer(csv_data, **plot_config)
 
     if y2:
         fig = plot_twin_x(csv_data, fig, y2=y2, **plot_config)
