@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cdplot"
-version = "1.0a"
+version = "1.1a"
 description = "Plots csv data using plotly library"
 authors = ["Stefan Sullivan <stefan.sullivan@gmail.com>"]
 license = "MIT"
