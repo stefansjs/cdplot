@@ -2,6 +2,7 @@
 import logging
 import sys
 from pathlib import Path
+from pyparsing import Word, alphanums
 
 from cdplot.data import load_from_csv
 from cdplot.filters import create_data_operators, process_data
@@ -11,7 +12,19 @@ from .config import process_config, serialize_config, determine_columns
 logger = logging.getLogger('cdplot')
 
 
-def main():
+class KeyValue:
+    MINI_LANGUAGE = Word(alphanums) + "=" + Word(alphanums)
+
+    def __init__(self, key_value_string):
+        tokens = self.MINI_LANGUAGE.parse_string(key_value_string)
+        self.key = tokens[0]
+        self.value = tokens[2] if len(tokens) == 3 else None
+
+    def __iter__(self):
+        return iter([self.key, self.value])
+
+
+def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--csv-path', '-f', type=Path, nargs='*')
@@ -32,8 +45,11 @@ def main():
     parser.add_argument('--x', '-x', help='column to use for the x-axis')
     parser.add_argument('--y', '-y', help='column(s) to use for the y-axis', nargs='*')
     parser.add_argument('--y2', help='column(s) to use for the right y axis', nargs='*')
-    arguments = parser.parse_args()
+    parser.add_argument('plot',  nargs='*', type=KeyValue,
+                        help='Any additional key-value parameters can be specified after -- separator')
+    arguments = parser.parse_args(argv)
     args_dict = dict(vars(arguments))
+    args_dict['plot'] = dict(args_dict.pop('plot', {}))
 
     # Filter out unset parameters
     args_dict = dict(filter(lambda k_v: k_v[1] is not None, args_dict.items()))
